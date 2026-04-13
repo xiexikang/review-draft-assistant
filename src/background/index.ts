@@ -7,14 +7,18 @@ import type {
   ProviderTestResult,
 } from "../shared/messages"
 import { getDraftsByOrderKey, setDraftsByOrderKey, setOrdersSnapshot } from "../shared/storage"
-import type { DraftItem } from "../shared/types"
+import type { DraftItem, ProviderId } from "../shared/types"
 import { generateDraftForOrder } from "./queue"
 import { claudeProvider } from "./providers/claude"
+import { deepseekProvider } from "./providers/deepseek"
 import { openaiProvider } from "./providers/openai"
+import { zhipuProvider } from "./providers/zhipu"
 
-function getProvider(provider: "openai" | "claude") {
+function getProvider(provider: ProviderId) {
   if (provider === "openai") return openaiProvider
-  return claudeProvider
+  if (provider === "claude") return claudeProvider
+  if (provider === "zhipu") return zhipuProvider
+  return deepseekProvider
 }
 
 chrome.runtime.onInstalled.addListener(() => {

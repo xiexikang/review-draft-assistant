@@ -5,7 +5,14 @@
   "description": "批量生成评价草稿并在评价页一键填入（不自动提交）",
   "action": { "default_title": "Review Draft Assistant" },
   "permissions": ["storage", "sidePanel", "tabs"],
-  "host_permissions": ["https://*.jd.com/*", "https://*.taobao.com/*"],
+  "host_permissions": [
+    "https://*.jd.com/*",
+    "https://*.taobao.com/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://open.bigmodel.cn/*",
+    "https://api.deepseek.com/*"
+  ],
   "background": { "service_worker": "background/index.js", "type": "module" },
   "content_scripts": [
     {
@@ -16,4 +23,3 @@
   ],
   "side_panel": { "default_path": "panel/index.html" }
 }
-

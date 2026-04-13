@@ -2,11 +2,15 @@ import { parseDrafts } from "../generator/parse"
 import { buildPrompt } from "../generator/prompt"
 import type { DraftItem, OrderItem, ProviderConfig } from "../shared/types"
 import { claudeProvider } from "./providers/claude"
+import { deepseekProvider } from "./providers/deepseek"
 import { openaiProvider } from "./providers/openai"
+import { zhipuProvider } from "./providers/zhipu"
 
 function getProvider(provider: ProviderConfig["provider"]) {
   if (provider === "openai") return openaiProvider
-  return claudeProvider
+  if (provider === "claude") return claudeProvider
+  if (provider === "zhipu") return zhipuProvider
+  return deepseekProvider
 }
 
 export async function generateDraftForOrder(args: {
@@ -38,4 +42,3 @@ export async function generateDraftForOrder(args: {
   if (!first) throw new Error("空草稿结果")
   return { ...first, orderKey: args.order.orderKey, rating: args.rating }
 }
-

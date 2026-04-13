@@ -7,6 +7,8 @@ import { getProviderConfig, setProviderConfig } from "../../shared/storage"
 const providerModels: Record<ProviderId, string[]> = {
   openai: ["gpt-4o-mini", "gpt-4.1-mini"],
   claude: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
+  zhipu: ["glm-4-flash", "glm-4"],
+  deepseek: ["deepseek-chat", "deepseek-reasoner"],
 }
 
 export function SettingsTab() {
@@ -86,6 +88,8 @@ export function SettingsTab() {
         >
           <option value="openai">OpenAI</option>
           <option value="claude">Claude</option>
+          <option value="zhipu">智谱</option>
+          <option value="deepseek">DeepSeek</option>
         </select>
       </label>
 

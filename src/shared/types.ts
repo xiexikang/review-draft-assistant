@@ -10,7 +10,7 @@ export type OrderItem = {
   itemUrl?: string
 }
 
-export type ProviderId = "openai" | "claude"
+export type ProviderId = "openai" | "claude" | "zhipu" | "deepseek"
 
 export type ProviderExtra = Record<string, string>
 
@@ -31,4 +31,3 @@ export type DraftItem = {
   draft_mid: string
   draft_long: string
 }
-
