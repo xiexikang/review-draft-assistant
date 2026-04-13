@@ -4,86 +4,106 @@ function text(el: Element | null | undefined): string {
   return (el?.textContent ?? "").replace(/\s+/g, " ").trim()
 }
 
-function pickTitle(container: Element): string {
-  const candidates = [
-    container.querySelector(".p-name a, .p-name"),
-    container.querySelector("a[href*='item.jd.com'], a[href*='item.m.jd.com']"),
-    container.querySelector("[title]"),
-    container.querySelector("[class*='title']"),
-    container.querySelector("[class*='name']"),
-  ]
-  for (const c of candidates) {
-    const t = text(c)
-    // 排除掉纯导航文本，保证抓到的是真实商品名称
-    if (t && t.length > 4 && !t.includes("待评价") && !t.includes("已评价")) return t
-  }
-  return text(container)
-}
-
-function stableOrderKey(actionUrl: string | undefined, container: Element, fallback: string): string {
-  // 1. 尝试从评价按钮的链接里取 ruleid 或 orderId
-  if (actionUrl) {
-    try {
-      const u = new URL(actionUrl)
-      const ruleid = u.searchParams.get("ruleid") || u.searchParams.get("orderId") || u.searchParams.get("oid")
-      if (ruleid) return ruleid
-      
-      const pathMatch = u.pathname.match(/\/(\d{10,})\.html/)
-      if (pathMatch) return pathMatch[1]!
-    } catch {}
-  }
-
-  // 2. 尝试从附近的 DOM 节点（如订单头部）提取订单号
-  const orderEl = container.closest('.tr-th, .order-tb tbody, table, .com-item')?.querySelector('.number a, [name="orderIdLinks"], .order-id, span.number')
-  if (orderEl) {
-    const txt = text(orderEl)
-    const match = txt.match(/\d{10,}/)
-    if (match) return match[0]
-  }
-
-  // 3. 兜底正则提取 actionUrl 中的连续数字
-  if (actionUrl) {
-    const match = actionUrl.match(/\d{10,}/)
-    if (match) return match[0]
-  }
-
-  return fallback
-}
-
 export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
-  // 找出所有可能是“评价”操作的按钮
-  const actionLinks = Array.from(doc.querySelectorAll<HTMLAnchorElement>('a')).filter(a => {
-    const txt = text(a)
-    if (!txt.includes('评价') && !txt.includes('晒单')) return false
-    
-    // 关键：排除顶部的导航 Tab（就是图片里看到的“待评价 服务评价”那一行）
-    if (a.closest('.mt, .tab, .nav, .menu, .ui-tab, .top, .top-nav')) return false
-    
-    if (a.classList.contains('btn-def') || a.classList.contains('btn-9')) return true
-    if (a.href && (a.href.includes('orderVoucher') || a.href.includes('club.jd.com'))) return true
-    
-    return false
-  })
-
   const items: OrderItem[] = []
-  for (const a of actionLinks) {
-    // 找到该评价按钮所属的商品区块/行
-    const container = a.closest("tr, tbody, table, .item, .com-item, .order-item, .J-order") ?? a.parentElement ?? a
+  
+  // 京东订单列表页 (order.jd.com) 的结构通常是一个 table.order-tb，每个订单对应一个/多个 tbody
+  // 每个订单包含一个 header tr.tr-th（里面有订单号）和至少一个商品行 tr.tr-bd
+  const tbodys = Array.from(doc.querySelectorAll<HTMLTableSectionElement>('table.order-tb tbody[id^="tb-"]'))
+  
+  for (const tbody of tbodys) {
+    // 提取订单号
+    const orderIdEl = tbody.querySelector('.number a[name="orderIdLinks"], .number [id^="idUrl"]')
+    let orderKey = ""
+    if (orderIdEl) {
+      orderKey = text(orderIdEl)
+    } else {
+      // 兜底：尝试从 tbody ID 中提取
+      const match = tbody.id.match(/\d{10,}/)
+      if (match) orderKey = match[0]
+    }
+    if (!orderKey) continue
+
+    // 查找该 tbody 下的所有商品行
+    const productRows = Array.from(tbody.querySelectorAll<HTMLTableRowElement>('tr.tr-bd'))
     
-    // 优先从商品链接获取标题
-    const titleEl = container.querySelector(".p-name a, a[href*='item.jd.com']")
-    const title = titleEl ? text(titleEl) : pickTitle(container)
-    
-    // 如果标题太短或者是导航词，跳过
-    if (!title || title.length < 4 || title.includes("待评价")) continue
-    
-    const itemUrl = titleEl && (titleEl as HTMLAnchorElement).href ? new URL((titleEl as HTMLAnchorElement).href, location.href).toString() : undefined
-    const orderKey = stableOrderKey(a.href, container, title)
-    
-    const skuEl = container.querySelector('.p-extra, .p-sku, .p-attr, .property')
-    const skuText = skuEl ? text(skuEl) : undefined
-    
-    items.push({ platform: "jd", orderKey, title, itemUrl, skuText })
+    for (const row of productRows) {
+      // 查找商品链接和名称
+      const nameEl = row.querySelector('.p-name a') as HTMLAnchorElement | null
+      if (!nameEl) continue
+      
+      const title = text(nameEl)
+      if (!title || title.length < 2) continue
+      
+      const itemUrl = nameEl.href ? new URL(nameEl.href, location.href).toString() : undefined
+      
+      // 查找商品规格（如果有）
+      const skuEl = row.querySelector('.p-extra .o-info')
+      const skuText = skuEl ? text(skuEl) : undefined
+      
+      // 检查当前行是否有关联的“评价”按钮
+      // 这里不严格要求按钮必须存在，因为有些商品可能已评价/评价过期，
+      // 但为了只收集“待评价”商品，我们检查操作区是否有“评价”相关字眼。
+      // 对于纯待评价列表，也可以假设出现的都是需要评价的。
+      const operateEl = row.querySelector('.operate') || tbody.querySelector('.operate')
+      const operateText = text(operateEl)
+      
+      // 注意：有些页面结构是把“评价”按钮放在订单级别，有些放在商品级别
+      // 只要能抓到这个订单的商品，就加进去。
+      // 我们可以在这里简单过滤一下那些明显写了“已评价”的行，但通常在“待评价”tab下都是可以评价的
+      if (operateText && operateText.includes("已评价")) continue
+      
+      // 如果没有专门的评价字眼，但页面 URL 本身就是待评价列表，也放行
+      
+      // 为了保证能被 Side Panel 使用，我们以 sku 为维度拆分 draft（或者退一步按 orderKey）
+      // 这里用 orderKey 加上商品后缀防止同订单多商品覆盖
+      // 但由于当前系统 Draft 结构主要是 orderKey 映射，我们可能需要保证 orderKey 的唯一性，
+      // 如果一个订单有多个商品，为了简单起见，可以给 orderKey 加个商品 ID 后缀
+      let uniqueOrderKey = orderKey
+      if (itemUrl) {
+        const skuMatch = itemUrl.match(/(\d+)\.html/)
+        if (skuMatch) uniqueOrderKey = `${orderKey}-${skuMatch[1]}`
+      }
+      
+      items.push({ 
+        platform: "jd", 
+        orderKey: uniqueOrderKey, // 使用唯一 Key
+        title, 
+        itemUrl, 
+        skuText 
+      })
+    }
+  }
+
+  // 如果上面的方法没抓到任何数据（可能在特殊的评价中心页面，结构不同）
+  // 兜底策略：查找所有可能带评价的商品单元
+  if (items.length === 0) {
+    const backupContainers = Array.from(doc.querySelectorAll('.com-item, .order-item, .goods-item'))
+    for (const container of backupContainers) {
+      const nameEl = container.querySelector('.p-name a, .name a, .title a') as HTMLAnchorElement | null
+      if (!nameEl) continue
+      
+      const title = text(nameEl)
+      if (!title) continue
+      
+      const itemUrl = nameEl.href ? new URL(nameEl.href, location.href).toString() : undefined
+      
+      // 尝试找订单号
+      let orderKey = ""
+      const orderEl = container.closest('.order, .item')?.querySelector('.order-id, .number')
+      if (orderEl) {
+        const match = text(orderEl).match(/\d{10,}/)
+        if (match) orderKey = match[0]
+      }
+      
+      if (!orderKey && itemUrl) {
+        const match = itemUrl.match(/\d{10,}/)
+        if (match) orderKey = match[0]
+      }
+      if (!orderKey) orderKey = title.slice(0, 15) // 最后兜底
+      
+      items.push({ platform: "jd", orderKey, title, itemUrl })
+    }
   }
 
   const uniq = new Map<string, OrderItem>()
