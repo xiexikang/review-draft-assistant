@@ -65,11 +65,15 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
         if (skuMatch) uniqueOrderKey = `${orderKey}-${skuMatch[1]}`
       }
       
+      const reviewBtn = operateEl?.querySelector('a[href*="orderVoucher.action"], a[href*="myJdcomment.action"], a[href*="club.jd.com"]') as HTMLAnchorElement | null
+      const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
+      
       items.push({ 
         platform: "jd", 
         orderKey: uniqueOrderKey, // 使用唯一 Key
         title, 
         itemUrl, 
+        reviewUrl,
         skuText 
       })
     }
@@ -87,6 +91,8 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       if (!title) continue
       
       const itemUrl = nameEl.href ? new URL(nameEl.href, location.href).toString() : undefined
+      const reviewBtn = container.querySelector('a[href*="comment"], a[href*="evaluate"]') as HTMLAnchorElement | null
+      const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
       
       // 尝试找订单号
       let orderKey = ""
@@ -102,7 +108,7 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       }
       if (!orderKey) orderKey = title.slice(0, 15) // 最后兜底
       
-      items.push({ platform: "jd", orderKey, title, itemUrl })
+      items.push({ platform: "jd", orderKey, title, itemUrl, reviewUrl })
     }
   }
 

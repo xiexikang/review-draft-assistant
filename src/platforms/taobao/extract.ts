@@ -65,12 +65,13 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     if (!title || title.length < 4 || title.includes("待评价")) continue
     
     const itemUrl = titleEl && (titleEl as HTMLAnchorElement).href ? new URL((titleEl as HTMLAnchorElement).href, location.href).toString() : undefined
+    const reviewUrl = a.href ? new URL(a.href, location.href).toString() : undefined
     const orderKey = stableOrderKey(a.href, container, title)
     
     const skuEl = container.querySelector('.sku, .props, .spec, .spec-info')
     const skuText = skuEl ? text(skuEl) : undefined
     
-    items.push({ platform: "taobao", orderKey, title, itemUrl, skuText })
+    items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, skuText })
   }
 
   const uniq = new Map<string, OrderItem>()

@@ -7,5 +7,5 @@ export const taobaoAdapter: PlatformAdapter = {
   platform: "taobao",
   detectContext: detectTaobaoContext,
   extractOrders: extractTaobaoOrders,
-  fillReview: fillTaobaoReview,
+  fillReview: (doc, text, orderKey) => fillTaobaoReview(doc, text, orderKey),
 }

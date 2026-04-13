@@ -8,6 +8,7 @@ export type OrderItem = {
   title: string
   skuText?: string
   itemUrl?: string
+  reviewUrl?: string
 }
 
 export type ProviderId = "openai" | "claude" | "zhipu" | "deepseek"
