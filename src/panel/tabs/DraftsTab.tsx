@@ -25,28 +25,55 @@ export function DraftsTab() {
     return () => chrome.runtime.onMessage.removeListener(onMsg as any)
   }, [])
 
-  async function copy(text: string) {
+  const [copyStatus, setCopyStatus] = useState<Record<string, string>>({})
+  const [fillStatus, setFillStatus] = useState<Record<string, string>>({})
+
+  async function copy(id: string, text: string) {
     await navigator.clipboard.writeText(text)
+    setCopyStatus((prev) => ({ ...prev, [id]: "已复制" }))
+    setTimeout(() => {
+      setCopyStatus((prev) => ({ ...prev, [id]: "" }))
+    }, 1500)
   }
 
-  async function fill(text: string) {
+  async function fill(id: string, text: string) {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (!tab?.id) return
+      setFillStatus((prev) => ({ ...prev, [id]: "填入中..." }))
+      // 匹配可能包含输入框的页面，不限制为 active，有时评价页在其他 tab
+      const tabs = await chrome.tabs.query({ url: ["*://*.jd.com/*", "*://*.taobao.com/*"] })
+      const activeTab = tabs.find(t => t.active) || tabs[0]
+      if (!activeTab?.id) {
+        setFillStatus((prev) => ({ ...prev, [id]: "未找到评价页" }))
+        return
+      }
+      
       const msg: PlatformFillReview = {
         type: "PLATFORM_FILL_REVIEW",
         payload: { platform: "jd", orderKey: "", text },
       }
-      await new Promise<void>((resolve, reject) => {
-        chrome.tabs.sendMessage(tab.id!, msg, () => {
-          const err = chrome.runtime.lastError
-          if (err) reject(new Error(err.message))
-          else resolve()
+      
+      const res = await new Promise<{ok: boolean, error?: string}>((resolve) => {
+        chrome.tabs.sendMessage(activeTab.id!, msg, (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ ok: false, error: chrome.runtime.lastError.message })
+          } else {
+            resolve(response || { ok: true })
+          }
         })
       })
-    } catch {
-      return
+      
+      if (res.ok) {
+        setFillStatus((prev) => ({ ...prev, [id]: "已填入" }))
+      } else {
+        setFillStatus((prev) => ({ ...prev, [id]: `失败: ${res.error || '未知'}` }))
+      }
+    } catch (e) {
+      setFillStatus((prev) => ({ ...prev, [id]: "错误" }))
     }
+    
+    setTimeout(() => {
+      setFillStatus((prev) => ({ ...prev, [id]: "" }))
+    }, 2000)
   }
 
   return (
@@ -68,11 +95,12 @@ export function DraftsTab() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold">短</div>
-                <div className="flex gap-1">
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_short)}>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-green-600">{copyStatus[`${d.orderKey}-short`] || fillStatus[`${d.orderKey}-short`]}</span>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${d.orderKey}-short`, d.draft_short)}>
                     复制
                   </button>
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(d.draft_short)}>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-short`, d.draft_short)}>
                     填入
                   </button>
                 </div>
@@ -83,11 +111,12 @@ export function DraftsTab() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold">中</div>
-                <div className="flex gap-1">
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_mid)}>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-green-600">{copyStatus[`${d.orderKey}-mid`] || fillStatus[`${d.orderKey}-mid`]}</span>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${d.orderKey}-mid`, d.draft_mid)}>
                     复制
                   </button>
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(d.draft_mid)}>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-mid`, d.draft_mid)}>
                     填入
                   </button>
                 </div>
@@ -98,11 +127,12 @@ export function DraftsTab() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold">长</div>
-                <div className="flex gap-1">
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_long)}>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-green-600">{copyStatus[`${d.orderKey}-long`] || fillStatus[`${d.orderKey}-long`]}</span>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${d.orderKey}-long`, d.draft_long)}>
                     复制
                   </button>
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(d.draft_long)}>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-long`, d.draft_long)}>
                     填入
                   </button>
                 </div>

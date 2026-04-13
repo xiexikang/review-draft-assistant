@@ -15,12 +15,18 @@ async function syncOrders() {
   chrome.runtime.sendMessage(msg)
 }
 
-chrome.runtime.onMessage.addListener((message: MessageToContent) => {
-  if (message.type !== "PLATFORM_FILL_REVIEW") return
+chrome.runtime.onMessage.addListener((message: MessageToContent, _sender, sendResponse) => {
+  if (message.type !== "PLATFORM_FILL_REVIEW") return false
   const platform = getPlatformByUrl(location.href)
   const adapter = getAdapter(platform)
-  if (!adapter) return
-  void adapter.fillReview(document, message.payload.text)
+  if (!adapter) {
+    sendResponse({ ok: false, error: "no adapter" })
+    return true
+  }
+  adapter.fillReview(document, message.payload.text)
+    .then(() => sendResponse({ ok: true }))
+    .catch((err) => sendResponse({ ok: false, error: err instanceof Error ? err.message : "unknown" }))
+  return true
 })
 
 void syncOrders()
