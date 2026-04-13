@@ -157,8 +157,9 @@ export function OrdersTab() {
               onChange={(e) => setSelected((s) => ({ ...s, [o.orderKey]: e.target.checked }))}
             />
             <div className="min-w-0">
-              <div className="truncate text-sm">{o.title}</div>
-              {o.skuText ? <div className="truncate text-xs text-slate-600">{o.skuText}</div> : null}
+              <div className="truncate text-sm" title={o.title}>{o.title}</div>
+              <div className="truncate text-[10px] text-slate-500">单号: {o.orderKey}</div>
+              {o.skuText ? <div className="truncate text-[10px] text-slate-500">规格: {o.skuText}</div> : null}
             </div>
           </label>
         ))}
