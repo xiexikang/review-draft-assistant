@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Review Draft Assistant",
+  "version": "0.1.0",
+  "description": "批量生成评价草稿并在评价页一键填入（不自动提交）",
+  "action": { "default_title": "Review Draft Assistant" },
+  "permissions": ["storage", "sidePanel", "tabs"],
+  "host_permissions": ["https://*.jd.com/*", "https://*.taobao.com/*"],
+  "background": { "service_worker": "background/index.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": ["https://*.jd.com/*", "https://*.taobao.com/*"],
+      "js": ["content/index.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": { "default_path": "panel/index.html" }
+}
+
