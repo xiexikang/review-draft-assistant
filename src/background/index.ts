@@ -1,4 +1,5 @@
-import type { MessageToBackground, ProviderTestResult } from "../shared/messages"
+import type { MessageToBackground, PlatformOrdersUpdated, ProviderTestResult } from "../shared/messages"
+import { setOrdersSnapshot } from "../shared/storage"
 import { claudeProvider } from "./providers/claude"
 import { openaiProvider } from "./providers/openai"
 
@@ -11,8 +12,15 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 })
 
-chrome.runtime.onMessage.addListener((message: MessageToBackground, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(
+  (message: MessageToBackground | PlatformOrdersUpdated, _sender, sendResponse) => {
   void (async () => {
+    if (message.type === "PLATFORM_ORDERS_UPDATED") {
+      await setOrdersSnapshot(message.payload)
+      sendResponse({ ok: true })
+      return
+    }
+
     if (message.type === "PROVIDER_TEST") {
       try {
         const provider = getProvider(message.payload.providerConfig.provider)
@@ -46,4 +54,5 @@ chrome.runtime.onMessage.addListener((message: MessageToBackground, _sender, sen
     sendResponse({ ok: false })
   })()
   return true
-})
+},
+)

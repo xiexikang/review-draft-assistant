@@ -1,4 +1,4 @@
-import type { ProviderConfig } from "./types"
+import type { Context, OrderItem, Platform, ProviderConfig } from "./types"
 
 export const StorageKeys = {
   providerConfig: "providerConfig",
@@ -15,3 +15,13 @@ export async function setProviderConfig(config: ProviderConfig): Promise<void> {
   await chrome.storage.local.set({ [StorageKeys.providerConfig]: config })
 }
 
+export type OrdersSnapshot = { platform: Platform; context: Context; orders: OrderItem[] }
+
+export async function getOrdersSnapshot(): Promise<OrdersSnapshot | null> {
+  const result = await chrome.storage.local.get(StorageKeys.ordersSnapshot)
+  return (result[StorageKeys.ordersSnapshot] as OrdersSnapshot | undefined) ?? null
+}
+
+export async function setOrdersSnapshot(snapshot: OrdersSnapshot): Promise<void> {
+  await chrome.storage.local.set({ [StorageKeys.ordersSnapshot]: snapshot })
+}
