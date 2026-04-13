@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import type { GenDraftsResult } from "../../shared/messages"
+import type { GenDraftsResult, PlatformFillReview } from "../../shared/messages"
 import type { DraftItem } from "../../shared/types"
 import { getDraftsByOrderKey } from "../../shared/storage"
 
@@ -29,6 +29,26 @@ export function DraftsTab() {
     await navigator.clipboard.writeText(text)
   }
 
+  async function fill(text: string) {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      if (!tab?.id) return
+      const msg: PlatformFillReview = {
+        type: "PLATFORM_FILL_REVIEW",
+        payload: { platform: "jd", orderKey: "", text },
+      }
+      await new Promise<void>((resolve, reject) => {
+        chrome.tabs.sendMessage(tab.id!, msg, () => {
+          const err = chrome.runtime.lastError
+          if (err) reject(new Error(err.message))
+          else resolve()
+        })
+      })
+    } catch {
+      return
+    }
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -48,9 +68,14 @@ export function DraftsTab() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold">短</div>
-                <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_short)}>
-                  复制
-                </button>
+                <div className="flex gap-1">
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_short)}>
+                    复制
+                  </button>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(d.draft_short)}>
+                    填入
+                  </button>
+                </div>
               </div>
               <div className="whitespace-pre-wrap break-words text-xs text-slate-800">{d.draft_short}</div>
             </div>
@@ -58,9 +83,14 @@ export function DraftsTab() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold">中</div>
-                <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_mid)}>
-                  复制
-                </button>
+                <div className="flex gap-1">
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_mid)}>
+                    复制
+                  </button>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(d.draft_mid)}>
+                    填入
+                  </button>
+                </div>
               </div>
               <div className="whitespace-pre-wrap break-words text-xs text-slate-800">{d.draft_mid}</div>
             </div>
@@ -68,9 +98,14 @@ export function DraftsTab() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold">长</div>
-                <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_long)}>
-                  复制
-                </button>
+                <div className="flex gap-1">
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(d.draft_long)}>
+                    复制
+                  </button>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(d.draft_long)}>
+                    填入
+                  </button>
+                </div>
               </div>
               <div className="whitespace-pre-wrap break-words text-xs text-slate-800">{d.draft_long}</div>
             </div>
