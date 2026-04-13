@@ -6,53 +6,68 @@ function text(el: Element | null | undefined): string {
 
 function pickTitle(container: Element): string {
   const candidates = [
-    container.querySelector(".item-title, .title a, .product-title"),
+    container.querySelector(".item-title, .title a, .product-title, .baobei-name"),
+    container.querySelector("a[href*='item.htm'], a[href*='detail.tmall.com']"),
     container.querySelector("[title]"),
     container.querySelector("[class*='title']"),
     container.querySelector("[class*='name']"),
-    container.querySelector("a[href*='item.htm']"),
   ]
   for (const c of candidates) {
     const t = text(c)
-    if (t) return t
+    if (t && t.length > 4 && !t.includes("评价")) return t
   }
   return text(container)
 }
 
-function stableOrderKey(itemUrl: string | undefined, container: Element, fallback: string): string {
-  // Look for order ID in the table or container
-  const orderEl = container.closest('table, .order-item, .item')?.querySelector('.order-info, .order-num, [class*="orderId"]')
+function stableOrderKey(actionUrl: string | undefined, container: Element, fallback: string): string {
+  if (actionUrl) {
+    try {
+      const u = new URL(actionUrl)
+      const possible = u.searchParams.get("trade_id") || u.searchParams.get("tradeId") || u.searchParams.get("orderId") || u.searchParams.get("id") || u.searchParams.get("bizOrderId")
+      if (possible) return possible
+    } catch {}
+  }
+
+  const orderEl = container.closest('table, .order-item, .item, tbody')?.querySelector('.order-info, .order-num, [class*="orderId"], .number')
   if (orderEl) {
     const match = text(orderEl).match(/\d{15,}/)
     if (match) return match[0]
   }
 
-  if (!itemUrl) return fallback
-  try {
-    const u = new URL(itemUrl)
-    const possible = u.searchParams.get("trade_id") || u.searchParams.get("tradeId") || u.searchParams.get("orderId") || u.searchParams.get("id")
-    if (possible) return possible
-    return u.toString()
-  } catch {
-    return itemUrl
+  if (actionUrl) {
+    const match = actionUrl.match(/\d{15,}/)
+    if (match) return match[0]
   }
+
+  return fallback
 }
 
 export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
-  const actionLinks = Array.from(
-    doc.querySelectorAll<HTMLAnchorElement>('a[href*="rate"],a[href*="comment"],a[href*="evaluate"],.btn-review,.J_MakePoint')
-  ).filter(a => text(a).includes('评价') || text(a).includes('追加评价'))
+  const actionLinks = Array.from(doc.querySelectorAll<HTMLAnchorElement>('a')).filter(a => {
+    const txt = text(a)
+    if (!txt.includes('评价') && !txt.includes('追加评价')) return false
+    
+    if (a.closest('.nav, .tab, .menu, .header, .top')) return false
+    
+    if (a.href && (a.href.includes('rate.taobao.com') || a.href.includes('rate.tmall.com'))) return true
+    if (a.classList.contains('btn-review') || a.classList.contains('J_MakePoint')) return true
+    
+    return false
+  })
 
   const items: OrderItem[] = []
   for (const a of actionLinks) {
-    const container = a.closest("tr, .item, .order, .order-item, .suborder") ?? a.parentElement ?? a
-    const title = pickTitle(container)
-    if (!title) continue
-    const itemUrl = a.href ? new URL(a.href, location.href).toString() : undefined
-    const orderKey = stableOrderKey(itemUrl, container, title)
+    const container = a.closest("tr, tbody, table, .item, .order, .order-item, .suborder") ?? a.parentElement ?? a
     
-    // Extract SKU details
-    const skuEl = container.querySelector('.sku, .props, .spec')
+    const titleEl = container.querySelector(".item-title, .baobei-name, a[href*='item.htm'], a[href*='detail.tmall.com']")
+    const title = titleEl ? text(titleEl) : pickTitle(container)
+    
+    if (!title || title.length < 4 || title.includes("待评价")) continue
+    
+    const itemUrl = titleEl && (titleEl as HTMLAnchorElement).href ? new URL((titleEl as HTMLAnchorElement).href, location.href).toString() : undefined
+    const orderKey = stableOrderKey(a.href, container, title)
+    
+    const skuEl = container.querySelector('.sku, .props, .spec, .spec-info')
     const skuText = skuEl ? text(skuEl) : undefined
     
     items.push({ platform: "taobao", orderKey, title, itemUrl, skuText })
@@ -62,4 +77,3 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
   for (const it of items) uniq.set(it.orderKey, it)
   return Array.from(uniq.values()).slice(0, 50)
 }
-
