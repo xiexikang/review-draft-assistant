@@ -1,5 +1,14 @@
-import type { MessageToBackground, PlatformOrdersUpdated, ProviderTestResult } from "../shared/messages"
-import { setOrdersSnapshot } from "../shared/storage"
+import type {
+  GenDraftsError,
+  GenDraftsProgress,
+  GenDraftsResult,
+  MessageToBackground,
+  PlatformOrdersUpdated,
+  ProviderTestResult,
+} from "../shared/messages"
+import { getDraftsByOrderKey, setDraftsByOrderKey, setOrdersSnapshot } from "../shared/storage"
+import type { DraftItem } from "../shared/types"
+import { generateDraftForOrder } from "./queue"
 import { claudeProvider } from "./providers/claude"
 import { openaiProvider } from "./providers/openai"
 
@@ -12,8 +21,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
 })
 
-chrome.runtime.onMessage.addListener(
-  (message: MessageToBackground | PlatformOrdersUpdated, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: MessageToBackground | PlatformOrdersUpdated, _sender, sendResponse) => {
   void (async () => {
     if (message.type === "PLATFORM_ORDERS_UPDATED") {
       await setOrdersSnapshot(message.payload)
@@ -51,8 +59,46 @@ chrome.runtime.onMessage.addListener(
       return
     }
 
+    if (message.type === "GEN_DRAFTS_START") {
+      const { providerConfig, orders, rating, tags, style } = message.payload
+      const total = orders.length
+      let done = 0
+      const out: DraftItem[] = []
+      const map = await getDraftsByOrderKey()
+
+      for (const order of orders) {
+        try {
+          const draft = await generateDraftForOrder({ providerConfig, order, rating, tags, style })
+          out.push(draft)
+          map[draft.orderKey] = draft
+        } catch (e) {
+          const err: GenDraftsError = {
+            type: "GEN_DRAFTS_ERROR",
+            payload: {
+              orderKey: order.orderKey,
+              errorMessage: e instanceof Error ? e.message : "Unknown error",
+            },
+          }
+          chrome.runtime.sendMessage(err)
+        }
+
+        done += 1
+        const progress: GenDraftsProgress = {
+          type: "GEN_DRAFTS_PROGRESS",
+          payload: { done, total, currentOrderKey: order.orderKey },
+        }
+        chrome.runtime.sendMessage(progress)
+      }
+
+      await setDraftsByOrderKey(map)
+      const result: GenDraftsResult = { type: "GEN_DRAFTS_RESULT", payload: { drafts: out } }
+      chrome.runtime.sendMessage(result)
+      sendResponse({ ok: true })
+      return
+    }
+
     sendResponse({ ok: false })
   })()
+
   return true
-},
-)
+})
