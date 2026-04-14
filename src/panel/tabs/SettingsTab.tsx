@@ -107,10 +107,6 @@ export function SettingsTab() {
     })()
   }, [])
 
-  useEffect(() => {
-    setModel(models[0]!)
-  }, [provider, models])
-
   async function onSave() {
     const cfg: ProviderConfig = {
       provider,
@@ -155,7 +151,11 @@ export function SettingsTab() {
         <select
           className="w-full rounded border px-2 py-1 text-sm"
           value={provider}
-          onChange={(e) => setProvider(e.target.value as ProviderId)}
+          onChange={(e) => {
+            const newProvider = e.target.value as ProviderId
+            setProvider(newProvider)
+            setModel(providerModels[newProvider][0]!)
+          }}
         >
           <option value="openai">OpenAI</option>
           <option value="claude">Claude</option>
