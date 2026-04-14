@@ -153,11 +153,17 @@ export function OrdersTab() {
     setExpanded((prev) => ({ ...prev, [orderKey]: !prev[orderKey] }))
   }
 
+  function getPlatformName(platform: string) {
+    if (platform === "jd") return "京东"
+    if (platform === "taobao") return "淘宝"
+    return platform
+  }
+
   return (
     <div className="space-y-2">
       <div className="text-sm font-semibold">订单</div>
       <div className="text-xs text-slate-600">
-        平台：{meta.platform} / 上下文：{meta.context} / 识别：{orders.length} / 已选：{selectedCount}
+        平台：<span className="font-bold">{getPlatformName(meta.platform)}</span> / 上下文：<span className="font-bold">{meta.context}</span> / 识别：<span className="font-bold">{orders.length}</span> / 已选：<span className="font-bold">{selectedCount}</span>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <label className="block space-y-1">
