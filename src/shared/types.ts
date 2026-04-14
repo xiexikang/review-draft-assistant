@@ -16,7 +16,15 @@ export type OrderItem = {
   imageUrl?: string
 }
 
-export type ProviderId = "openai" | "claude" | "zhipu" | "deepseek" | "qwen" | "minimax" | "moonshot"
+export type ProviderId =
+  | "openai"
+  | "claude"
+  | "zhipu"
+  | "deepseek"
+  | "qwen"
+  | "minimax"
+  | "moonshot"
+  | "openrouter"
 
 export type ProviderExtra = Record<string, string>
 

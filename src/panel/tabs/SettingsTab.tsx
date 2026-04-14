@@ -69,7 +69,17 @@ const providerModels: Record<ProviderId, string[]> = {
     "kimi-k2",
     "kimi-dev-72b",
     "moonlight-16b-a3b-instruct"
-  ]
+  ],
+  openrouter: [
+    "openai/gpt-5.4-mini",
+    "openai/gpt-5.4-nano",
+    "anthropic/claude-sonnet-4.6",
+    "z-ai/glm-4.7",
+    "qwen/qwen3.6-plus",
+    "deepseek/deepseek-chat",
+    "moonshotai/kimi-k2",
+    "minimax/minimax-m2.5",
+  ],
 }
 
 export function SettingsTab() {
@@ -91,6 +101,7 @@ export function SettingsTab() {
     if (provider === "qwen") return "https://dashscope.aliyuncs.com/compatible-mode/v1"
     if (provider === "minimax") return "https://api.minimax.chat/v1"
     if (provider === "moonshot") return "https://api.moonshot.cn/v1"
+    if (provider === "openrouter") return "https://openrouter.ai/api/v1"
     return "https://api.deepseek.com"
   }, [provider])
 
@@ -164,6 +175,7 @@ export function SettingsTab() {
           <option value="qwen">Qwen (通义千问)</option>
           <option value="minimax">MiniMax</option>
           <option value="moonshot">Kimi (Moonshot)</option>
+          <option value="openrouter">OpenRouter</option>
         </select>
       </label>
 

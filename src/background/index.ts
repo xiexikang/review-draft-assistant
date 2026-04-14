@@ -16,6 +16,7 @@ import { zhipuProvider } from "./providers/zhipu"
 import { qwenProvider } from "./providers/qwen"
 import { minimaxProvider } from "./providers/minimax"
 import { moonshotProvider } from "./providers/moonshot"
+import { openrouterProvider } from "./providers/openrouter"
 
 function getProvider(provider: ProviderId) {
   if (provider === "openai") return openaiProvider
@@ -24,6 +25,7 @@ function getProvider(provider: ProviderId) {
   if (provider === "qwen") return qwenProvider
   if (provider === "minimax") return minimaxProvider
   if (provider === "moonshot") return moonshotProvider
+  if (provider === "openrouter") return openrouterProvider
   return deepseekProvider
 }
 
