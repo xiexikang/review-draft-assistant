@@ -68,12 +68,17 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       const reviewBtn = operateEl?.querySelector('a[href*="orderVoucher.action"], a[href*="myJdcomment.action"], a[href*="club.jd.com"]') as HTMLAnchorElement | null
       const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
       
+      const imgEl = row.querySelector('.p-img img, .goods-item img') as HTMLImageElement | null
+      let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.src || undefined
+      if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
+      
       items.push({ 
         platform: "jd", 
         orderKey: uniqueOrderKey, // 使用唯一 Key
         title, 
         itemUrl, 
         reviewUrl,
+        imageUrl,
         skuText 
       })
     }
@@ -94,6 +99,10 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       const reviewBtn = container.querySelector('a[href*="comment"], a[href*="evaluate"]') as HTMLAnchorElement | null
       const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
       
+      const imgEl = container.querySelector('.p-img img, .goods-item img, img') as HTMLImageElement | null
+      let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.src || undefined
+      if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
+      
       // 尝试找订单号
       let orderKey = ""
       const orderEl = container.closest('.order, .item')?.querySelector('.order-id, .number')
@@ -108,7 +117,7 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       }
       if (!orderKey) orderKey = title.slice(0, 15) // 最后兜底
       
-      items.push({ platform: "jd", orderKey, title, itemUrl, reviewUrl })
+      items.push({ platform: "jd", orderKey, title, itemUrl, reviewUrl, imageUrl })
     }
   }
 

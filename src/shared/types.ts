@@ -9,6 +9,7 @@ export type OrderItem = {
   skuText?: string
   itemUrl?: string
   reviewUrl?: string
+  imageUrl?: string
 }
 
 export type ProviderId = "openai" | "claude" | "zhipu" | "deepseek"

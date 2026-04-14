@@ -71,7 +71,11 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     const skuEl = container.querySelector('.sku, .props, .spec, .spec-info')
     const skuText = skuEl ? text(skuEl) : undefined
     
-    items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, skuText })
+    const imgEl = container.querySelector('.item-pic img, .p-img img, .pic img, img') as HTMLImageElement | null
+    let imageUrl = imgEl?.getAttribute('data-src') || imgEl?.src || undefined
+    if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
+    
+    items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
   }
 
   const uniq = new Map<string, OrderItem>()
