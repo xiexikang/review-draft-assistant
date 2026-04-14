@@ -43,7 +43,7 @@ export type GenDraftsError = {
 
 export type PlatformFillReview = {
   type: "PLATFORM_FILL_REVIEW"
-  payload: { platform: Platform; orderKey: string; text: string; rating: number }
+  payload: { platform: Platform; orderKey: string; text: string; rating: number; submit?: boolean }
 }
 
 export type MessageToBackground = ProviderTest | GenDraftsStart

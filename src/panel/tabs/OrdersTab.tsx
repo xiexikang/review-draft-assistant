@@ -103,9 +103,9 @@ export function OrdersTab() {
     }, 1500)
   }
 
-  async function fill(id: string, text: string, orderKey: string, draftRating: number, reviewUrl?: string) {
+  async function fill(id: string, text: string, orderKey: string, draftRating: number, reviewUrl?: string, submit: boolean = false) {
     try {
-      setFillStatus((prev) => ({ ...prev, [id]: "填入中..." }))
+      setFillStatus((prev) => ({ ...prev, [id]: submit ? "发表中..." : "填入中..." }))
       const tabs = await chrome.tabs.query({ url: ["*://*.jd.com/*", "*://*.taobao.com/*"] })
       const activeTab = tabs.find(t => t.active) || tabs[0]
       
@@ -118,7 +118,7 @@ export function OrdersTab() {
       
       const msg: PlatformFillReview = {
         type: "PLATFORM_FILL_REVIEW",
-        payload: { platform: meta.platform as any, orderKey, text, rating: draftRating },
+        payload: { platform: meta.platform as any, orderKey, text, rating: draftRating, submit },
       }
       
       const res = await new Promise<{ok: boolean, error?: string}>((resolve) => {
@@ -293,11 +293,14 @@ export function OrdersTab() {
                               <div className="text-xs font-semibold">短</div>
                               <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-short`] || fillStatus[`${o.orderKey}-short`]}</span>
-                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void copy(`${o.orderKey}-short`, draft.draft_short)}>
+                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void copy(`${o.orderKey}-short`, draft.draft_short)}>
                                   复制
                                 </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl)}>
+                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl)}>
                                   填入
+                                </button>
+                                <button className="rounded border px-2 py-1 text-xs bg-slate-900 text-white hover:bg-slate-800 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl, true)}>
+                                  填入并发表
                                 </button>
                               </div>
                             </div>
@@ -310,11 +313,14 @@ export function OrdersTab() {
                               <div className="text-xs font-semibold">中</div>
                               <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-mid`] || fillStatus[`${o.orderKey}-mid`]}</span>
-                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void copy(`${o.orderKey}-mid`, draft.draft_mid)}>
+                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void copy(`${o.orderKey}-mid`, draft.draft_mid)}>
                                   复制
                                 </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl)}>
+                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl)}>
                                   填入
+                                </button>
+                                <button className="rounded border px-2 py-1 text-xs bg-slate-900 text-white hover:bg-slate-800 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl, true)}>
+                                  填入并发表
                                 </button>
                               </div>
                             </div>
@@ -327,11 +333,14 @@ export function OrdersTab() {
                               <div className="text-xs font-semibold">长</div>
                               <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-long`] || fillStatus[`${o.orderKey}-long`]}</span>
-                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void copy(`${o.orderKey}-long`, draft.draft_long)}>
+                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void copy(`${o.orderKey}-long`, draft.draft_long)}>
                                   复制
                                 </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl)}>
+                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl)}>
                                   填入
+                                </button>
+                                <button className="rounded border px-2 py-1 text-xs bg-slate-900 text-white hover:bg-slate-800 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl, true)}>
+                                  填入并发表
                                 </button>
                               </div>
                             </div>

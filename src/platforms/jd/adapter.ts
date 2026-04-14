@@ -7,5 +7,5 @@ export const jdAdapter: PlatformAdapter = {
   platform: "jd",
   detectContext: detectJdContext,
   extractOrders: extractJdOrders,
-  fillReview: (doc, text, orderKey, rating) => fillJdReview(doc, text, orderKey, rating),
+  fillReview: (doc, text, orderKey, rating, submit) => fillJdReview(doc, text, orderKey, rating, submit),
 }

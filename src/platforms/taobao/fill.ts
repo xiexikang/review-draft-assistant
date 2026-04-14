@@ -5,7 +5,7 @@ function setNativeValue(el: HTMLTextAreaElement | HTMLInputElement, value: strin
   el.dispatchEvent(new Event("change", { bubbles: true }))
 }
 
-export async function fillTaobaoReview(doc: Document, text: string, orderKey?: string, rating?: number): Promise<void> {
+export async function fillTaobaoReview(doc: Document, text: string, orderKey?: string, rating?: number, submit?: boolean): Promise<void> {
   let textarea: HTMLTextAreaElement | HTMLInputElement | null = null
   let targetContainer: Element | null = null
 
@@ -47,6 +47,16 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
         }
       }
     }
+  }
+
+  if (submit) {
+    setTimeout(() => {
+      // 淘宝的发表按钮
+      const submitBtn = doc.querySelector('.J_SubmitReview, button[type="submit"], .btn-submit, .submit') as HTMLElement | null
+      if (submitBtn) {
+        submitBtn.click()
+      }
+    }, 500)
   }
 }
 

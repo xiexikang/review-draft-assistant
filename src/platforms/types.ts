@@ -4,6 +4,6 @@ export type PlatformAdapter = {
   platform: Exclude<Platform, "unknown">
   detectContext: (tabUrl: string, doc: Document) => Context
   extractOrders: (doc: Document) => Promise<OrderItem[]>
-  fillReview: (doc: Document, text: string, orderKey?: string, rating?: number) => Promise<void>
+  fillReview: (doc: Document, text: string, orderKey?: string, rating?: number, submit?: boolean) => Promise<void>
 }
 

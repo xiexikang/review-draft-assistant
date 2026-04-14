@@ -5,7 +5,7 @@ function setNativeValue(el: HTMLTextAreaElement | HTMLInputElement, value: strin
   el.dispatchEvent(new Event("change", { bubbles: true }))
 }
 
-export async function fillJdReview(doc: Document, text: string, orderKey?: string, rating?: number): Promise<void> {
+export async function fillJdReview(doc: Document, text: string, orderKey?: string, rating?: number, submit?: boolean): Promise<void> {
   let textarea: HTMLTextAreaElement | HTMLInputElement | null = null
   let targetContainer: Element | null = null
   
@@ -57,6 +57,17 @@ export async function fillJdReview(doc: Document, text: string, orderKey?: strin
         targetStar.click()
       }
     }
+  }
+
+  // 自动点击“发表”按钮
+  if (submit) {
+    setTimeout(() => {
+      // 在京东评价页里，"发表"按钮一般是 .btn-submit 或者包含类似文案的 a 标签
+      const submitBtn = doc.querySelector('.btn-submit, a.btn-submit, button.btn-submit, [clstag*="fabupingjia"]') as HTMLElement | null
+      if (submitBtn) {
+        submitBtn.click()
+      }
+    }, 500) // 给予一点时间让 React/Vue 内部状态同步
   }
 }
 
