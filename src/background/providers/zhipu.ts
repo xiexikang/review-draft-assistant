@@ -33,11 +33,15 @@ export const zhipuProvider: ProviderAdapter = {
       headers["X-Title"] = "AI 一键评价助手"
     }
 
+    const model = cleanBaseUrl.includes("openrouter.ai") && !config.model.includes("/")
+      ? `z-ai/${config.model}`
+      : config.model
+
     return {
       url: `${cleanBaseUrl}/chat/completions`,
       headers,
       body: {
-        model: config.model,
+        model,
         temperature: config.temperature ?? 0.7,
         max_tokens: config.maxTokens ?? 800,
         messages: [

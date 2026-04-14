@@ -25,7 +25,10 @@
     "https://api.z.ai/*",
     "https://open.bigmodel.cn/*",
     "https://openrouter.ai/*",
-    "https://api.deepseek.com/*"
+    "https://api.deepseek.com/*",
+    "https://dashscope.aliyuncs.com/*",
+    "https://api.minimax.chat/*",
+    "https://api.moonshot.cn/*"
   ],
   "background": { "service_worker": "background/index.js", "type": "module" },
   "content_scripts": [

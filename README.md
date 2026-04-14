@@ -1,24 +1,23 @@
 # AI 一键评价助手 (Review Draft Assistant)
 
-一款基于 Chrome Side Panel 的浏览器扩展，利用大语言模型（LLM）帮助用户在京东、淘宝等电商平台一键批量生成优质的评价草稿，并支持自动填入文本、自动打星和一键发表，彻底解放你的双手！
+一款基于 Chrome Side Panel 的浏览器扩展，利用大语言模型（LLM）帮助用户在京东、淘宝等电商平台一键批量生成评价草稿，并支持自动填入文本、自动打星、可选一键发表。
 
 ## ✨ 核心功能
 
-- 🛍️ **多电商平台支持**：支持京东（JD）、淘宝（Taobao）待评价列表的数据自动抓取与订单智能合并展示。
-- 🤖 **多 AI 模型接入**：内置 OpenAI、Claude、智谱 (Zhipu)、DeepSeek 等多种大语言模型接口兼容，支持自定义 Base URL、API Key 与高级生成参数。
-- 📝 **批量生成评价草稿**：支持勾选多个订单，根据用户指定的星级、风格（如“简洁、口语化”）和自定义标签（如“物流快、包装好”）一键批量生成**短、中、长**三种字数的评价草稿，满足不同场景需求。
-- ⚡ **自动填入与一键发表**：
-  - 自动识别网页上的评价输入框并填入对应文案。
-  - 根据生成的星级自动点亮所有的星星（商品评分、物流评分、服务评分等）。
-  - 支持“**填入并发表**”按钮，自动等待页面响应后触发表单提交。
-- 🎨 **现代化流畅 UI**：基于 React + Tailwind CSS 构建的侧边栏界面，仿原生的卡片式排版体验，包含商品图片缩略图、订单时间、规格数量等详细信息展示。
+- 🛍️ **多电商平台支持**：支持京东（JD）、淘宝（Taobao）待评价列表的数据抓取与展示。
+- 🤖 **多 AI 模型接入**：内置 OpenAI、Anthropic (Claude)、智谱（Zhipu / Z.ai）、DeepSeek、Qwen（通义千问）、MiniMax、Kimi（Moonshot）等；支持自定义 Base URL / API Key / 温度 / maxTokens。
+- 📝 **生成评价草稿**：支持根据星级、风格（如“简洁、口语化”）和自定义标签（如“物流快、包装好”）生成短/中/长三种字数的草稿。
+- ⚡ **批量生成 + 单条一键生成**：支持勾选多单批量生成，也支持在订单列表中对单个订单“一键生成 / 重新生成”。
+- 🧩 **自动填入与可选一键发表**：自动识别评价输入框并填入、自动打星，并支持“填入并发表”（会触发页面提交）。
+- 🧼 **只展示文本模型**：模型下拉中不展示视频/图片生成模型（仅保留文本/推理相关模型）。
+- 🎨 **侧边栏 UI**：Side Panel 内卡片式展示订单信息、商品图片、规格与草稿预览。
 
 ## 🛠️ 技术栈
 
-- [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vitejs.dev/) + [CRXJS Vite Plugin](https://crxjs.dev/) (用于构建 Chrome 扩展)
-- [Tailwind CSS](https://tailwindcss.com/) (原子化 CSS 样式框架)
-- **Chrome Extension Manifest V3** (包括 Side Panel API, Content Scripts, Background Service Worker)
+- [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)（Rollup 多入口：Side Panel / Background / Content Script）
+- [Tailwind CSS](https://tailwindcss.com/)
+- Chrome Extension Manifest V3（Side Panel、Content Scripts、Background Service Worker）
 
 ## 🚀 安装与运行
 
@@ -56,15 +55,30 @@ pnpm build
 ## 💡 使用指南
 
 1. **配置大模型**：
-   打开扩展侧边栏面板，切换到 **“AI设置”** 页签，选择你的大模型厂商（如 DeepSeek、智谱等），填入你的 API Key 和对应的模型名称，点击“保存”。可以通过“测试连接”来验证是否配置成功。
+   打开扩展侧边栏面板，进入 **“AI设置”**，选择大模型厂商，填入 API Key 与模型名称并点击“保存”。支持“测试连接”验证配置是否正确。
 2. **抓取待评价订单**：
    在浏览器中打开京东的待评价页面（如 `https://club.jd.com/myJdcomments/myJdcomment.action`）或淘宝的待评价页面。
 3. **刷新订单数据**：
    如果面板没有自动抓取，可以点击面板顶部订单标题旁的 **“刷新”** 按钮重新获取当前页面的订单。
 4. **生成草稿**：
-   勾选你要评价的订单，选择你想要给出的星级、风格，并点击“批量生成”按钮，等待 AI 返回生成的文案。
+   - 批量：勾选你要评价的订单，选择星级、风格后点击“批量生成”。
+   - 单条：在订单列表的某条订单中点击“一键生成 / 重新生成”。
 5. **一键评价**：
    点击“填入并发表”按钮，插件将自动把文字填入页面输入框、打上相应的星级，并在短暂等待后自动提交评价。
+
+## 🔧 大模型配置（Base URL）
+
+下表为各厂商常见 Base URL（也支持自定义代理）。如使用 OpenRouter，可将 Base URL 设置为 `https://openrouter.ai/api/v1`，插件会自动补全 OpenRouter 的模型前缀（例如 `openai/`、`anthropic/` 等）。
+
+| 厂商 | 建议 Base URL | 说明 |
+| --- | --- | --- |
+| OpenAI | `https://api.openai.com` | 也可切换到 OpenRouter |
+| Anthropic (Claude) | `https://api.anthropic.com` | 使用 OpenRouter 时走 OpenAI 兼容 `/chat/completions` |
+| 智谱（Zhipu / Z.ai） | `https://open.bigmodel.cn/api/paas/v4` 或 `https://api.z.ai/api/paas/v4` | OpenAI 兼容接口 |
+| DeepSeek | `https://api.deepseek.com` | OpenAI 兼容接口 |
+| Qwen（通义千问） | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI 兼容接口 |
+| MiniMax | `https://api.minimax.chat/v1` | OpenAI 兼容接口 |
+| Kimi（Moonshot） | `https://api.moonshot.cn/v1` | OpenAI 兼容接口 |
 
 ## 📜 许可证 (License)
 
