@@ -68,8 +68,12 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       const reviewBtn = operateEl?.querySelector('a[href*="orderVoucher.action"], a[href*="myJdcomment.action"], a[href*="club.jd.com"]') as HTMLAnchorElement | null
       const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
       
-      const imgEl = row.querySelector('.p-img img, .goods-item img') as HTMLImageElement | null
+      const imgEl = row.querySelector('.p-img img, .goods-item img, img') as HTMLImageElement | null
       let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.getAttribute('src') || imgEl?.src || undefined
+      // 处理 src 可能存在的协议缺失或者包含懒加载占位图（比如 //misc.360buyimg.com/lib/img/e/blank.gif）
+      if (imageUrl && imageUrl.includes('blank.gif')) {
+        imageUrl = imgEl?.getAttribute('data-lazy-img') || undefined
+      }
       if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
       
       items.push({ 

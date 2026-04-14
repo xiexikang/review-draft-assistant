@@ -218,32 +218,36 @@ export function OrdersTab() {
 
           return (
             <div key={o.orderKey} className="rounded border flex flex-col overflow-hidden">
-              <label className="flex items-start gap-2 p-2 cursor-pointer bg-slate-50 hover:bg-slate-100">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={Boolean(selected[o.orderKey])}
-                  onChange={(e) => setSelected((s) => ({ ...s, [o.orderKey]: e.target.checked }))}
-                />
+              <label className="flex items-start gap-3 p-3 cursor-pointer bg-white hover:bg-slate-50 transition-colors">
+                <div className="flex items-center h-full pt-1">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                    checked={Boolean(selected[o.orderKey])}
+                    onChange={(e) => setSelected((s) => ({ ...s, [o.orderKey]: e.target.checked }))}
+                  />
+                </div>
                 {o.imageUrl ? (
-                  <img src={o.imageUrl} alt="" className="w-10 h-10 object-cover rounded bg-white" />
+                  <img src={o.imageUrl} alt="" className="w-14 h-14 object-cover rounded-md border border-slate-100 flex-shrink-0" />
                 ) : (
-                  <div className="w-10 h-10 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs">无图</div>
+                  <div className="w-14 h-14 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center text-slate-400 text-xs flex-shrink-0">无图</div>
                 )}
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium" title={o.title}>{o.title}</div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="text-[10px] text-slate-500">
-                      单号: <span className="font-mono">{o.orderKey}</span>
-                      {o.skuText ? <span className="ml-2">规格: {o.skuText}</span> : null}
+                <div className="min-w-0 flex-1 flex flex-col justify-between min-h-[3.5rem]">
+                  <div className="truncate text-sm font-medium text-slate-800" title={o.title}>{o.title}</div>
+                  <div className="flex items-center justify-between mt-auto pt-1">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="text-[11px] text-slate-500 font-mono">
+                        订单号: {o.orderKey}
+                      </div>
+                      {o.skuText ? <div className="text-[11px] text-slate-500 truncate max-w-[150px]" title={o.skuText}>规格: {o.skuText}</div> : null}
                     </div>
                     {draft ? (
                       <button 
                         type="button" 
                         onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey); }}
-                        className="text-xs text-blue-600 hover:underline px-1"
+                        className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors whitespace-nowrap"
                       >
-                        {isExpanded ? "收起草稿" : "展开草稿"}
+                        {isExpanded ? "收起草稿" : "查看草稿"}
                       </button>
                     ) : null}
                   </div>
