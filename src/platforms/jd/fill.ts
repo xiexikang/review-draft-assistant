@@ -13,8 +13,9 @@ export async function fillJdReview(doc: Document, text: string, orderKey?: strin
     const parts = orderKey.split('-')
     const sku = parts[1] || parts[0]
     if (sku) {
-      const link = doc.querySelector(`a[href*="${sku}.html"], a[href*="${sku}"]`)
-      const container = link?.closest('.form-item, .comm-box, .item, .goods-info')
+      // 匹配商品链接、或者商品图片的 data-lazy-img / src，或者评价容器本身的 class
+      const link = doc.querySelector(`a[href*="${sku}.html"], a[href*="${sku}"], .product-${sku}, [productid="${sku}"]`)
+      const container = link?.closest('.f-item, .f-goods, .form-item, .comm-box, .item, .goods-info')
       if (container) {
         textarea = (container.querySelector("textarea") as HTMLTextAreaElement | null) ??
                    (container.querySelector("input[type='text']") as HTMLInputElement | null)
