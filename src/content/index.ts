@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((message: MessageToContent, _sender, sendRe
     sendResponse({ ok: false, error: "no adapter" })
     return true
   }
-  adapter.fillReview(document, message.payload.text, message.payload.orderKey)
+  adapter.fillReview(document, message.payload.text, message.payload.orderKey, message.payload.rating)
     .then(() => sendResponse({ ok: true }))
     .catch((err) => sendResponse({ ok: false, error: err instanceof Error ? err.message : "unknown" }))
   return true

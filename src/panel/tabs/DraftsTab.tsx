@@ -46,7 +46,7 @@ export function DraftsTab() {
     }, 1500)
   }
 
-  async function fill(id: string, text: string, orderKey: string) {
+  async function fill(id: string, text: string, orderKey: string, rating: number) {
     try {
       setFillStatus((prev) => ({ ...prev, [id]: "填入中..." }))
       // 匹配可能包含输入框的页面，不限制为 active，有时评价页在其他 tab
@@ -62,7 +62,7 @@ export function DraftsTab() {
       
       const msg: PlatformFillReview = {
         type: "PLATFORM_FILL_REVIEW",
-        payload: { platform: "jd", orderKey, text },
+        payload: { platform: "jd", orderKey, text, rating },
       }
       
       const res = await new Promise<{ok: boolean, error?: string}>((resolve) => {
@@ -124,7 +124,7 @@ export function DraftsTab() {
                   <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${d.orderKey}-short`, d.draft_short)}>
                     复制
                   </button>
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-short`, d.draft_short, d.orderKey)}>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-short`, d.draft_short, d.orderKey, d.rating)}>
                     填入
                   </button>
                 </div>
@@ -140,7 +140,7 @@ export function DraftsTab() {
                   <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${d.orderKey}-mid`, d.draft_mid)}>
                     复制
                   </button>
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-mid`, d.draft_mid, d.orderKey)}>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-mid`, d.draft_mid, d.orderKey, d.rating)}>
                     填入
                   </button>
                 </div>
@@ -156,7 +156,7 @@ export function DraftsTab() {
                   <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${d.orderKey}-long`, d.draft_long)}>
                     复制
                   </button>
-                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-long`, d.draft_long, d.orderKey)}>
+                  <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${d.orderKey}-long`, d.draft_long, d.orderKey, d.rating)}>
                     填入
                   </button>
                 </div>
