@@ -211,113 +211,138 @@ export function OrdersTab() {
       ) : null}
       {genStatus ? <div className="text-xs text-slate-700">{genStatus}</div> : null}
       
-      <div className="space-y-2 mt-4">
-        {orders.map((o) => {
-          const draft = drafts[o.orderKey]
-          const isExpanded = expanded[o.orderKey]
-
+      <div className="space-y-4 mt-4">
+        {Object.entries(
+          // 按 orderId 分组
+          orders.reduce((acc, o) => {
+            const key = o.orderId || o.orderKey
+            if (!acc[key]) acc[key] = []
+            acc[key].push(o)
+            return acc
+          }, {} as Record<string, OrderItem[]>)
+        ).map(([groupId, groupOrders]) => {
+          const firstOrder = groupOrders[0]
+          
           return (
-            <div key={o.orderKey} className="rounded border flex flex-col overflow-hidden">
-              <label className="flex items-start gap-3 p-3 cursor-pointer bg-white hover:bg-slate-50 transition-colors">
-                <div className="flex items-center h-full pt-1">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                    checked={Boolean(selected[o.orderKey])}
-                    onChange={(e) => setSelected((s) => ({ ...s, [o.orderKey]: e.target.checked }))}
-                  />
+            <div key={groupId} className="rounded border flex flex-col overflow-hidden bg-white">
+              {/* 订单 Header (灰色背景) */}
+              <div className="bg-slate-50 px-3 py-2 flex items-center justify-between border-b text-xs text-slate-600">
+                <div className="flex items-center gap-4">
+                  {firstOrder.date && <span className="font-bold text-slate-800">{firstOrder.date}</span>}
+                  <span>订单号: <span className="font-mono">{groupId}</span></span>
                 </div>
-                {o.imageUrl ? (
-                  <img src={o.imageUrl} alt="" className="w-14 h-14 object-cover rounded-md border border-slate-100 flex-shrink-0" />
-                ) : (
-                  <div className="w-14 h-14 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center text-slate-400 text-xs flex-shrink-0">无图</div>
-                )}
-                <div className="min-w-0 flex-1 flex flex-col justify-between min-h-[3.5rem]">
-                  <div className="truncate text-sm font-medium text-slate-800" title={o.title}>{o.title}</div>
-                  <div className="flex items-center justify-between mt-auto pt-1">
-                    <div className="flex flex-col gap-0.5">
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        订单号: {o.orderKey}
-                      </div>
-                      {o.skuText ? <div className="text-[11px] text-slate-500 truncate max-w-[150px]" title={o.skuText}>规格: {o.skuText}</div> : null}
-                    </div>
-                    {draft ? (
-                      <button 
-                        type="button" 
-                        onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey); }}
-                        className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors whitespace-nowrap"
-                      >
-                        {isExpanded ? "收起草稿" : "查看草稿"}
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </label>
-              
-              {draft && isExpanded && (
-                <div className="border-t p-2 bg-white space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold text-slate-700">生成结果（{draft.rating}星）</div>
-                    {o.reviewUrl && (
-                      <a href={o.reviewUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline font-semibold">
-                        去评价页 →
-                      </a>
-                    )}
-                  </div>
+                {firstOrder.consignee && <span>{firstOrder.consignee}</span>}
+              </div>
+
+              {/* 订单下的所有商品 */}
+              <div className="flex flex-col divide-y">
+                {groupOrders.map((o) => {
+                  const draft = drafts[o.orderKey]
+                  const isExpanded = expanded[o.orderKey]
                   
-                  {/* 短草稿 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold">短</div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-short`] || fillStatus[`${o.orderKey}-short`]}</span>
-                        <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${o.orderKey}-short`, draft.draft_short)}>
-                          复制
-                        </button>
-                        <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl)}>
-                          填入
-                        </button>
-                      </div>
-                    </div>
-                    <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-slate-50 p-2 rounded border border-slate-100">{draft.draft_short}</div>
-                  </div>
+                  return (
+                    <div key={o.orderKey} className="flex flex-col">
+                      <label className="flex items-start gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center h-full pt-1">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                            checked={Boolean(selected[o.orderKey])}
+                            onChange={(e) => setSelected((s) => ({ ...s, [o.orderKey]: e.target.checked }))}
+                          />
+                        </div>
+                        {o.imageUrl ? (
+                          <img src={o.imageUrl} alt="" className="w-14 h-14 object-cover rounded-md border border-slate-100 flex-shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center text-slate-400 text-xs flex-shrink-0">无图</div>
+                        )}
+                        <div className="min-w-0 flex-1 flex flex-col justify-between min-h-[3.5rem]">
+                          <div className="truncate text-sm font-medium text-slate-800" title={o.title}>{o.title}</div>
+                          <div className="flex items-center justify-between mt-auto pt-1">
+                            <div className="flex items-center gap-2">
+                              {o.skuText ? <div className="text-[11px] text-slate-500 truncate max-w-[150px]" title={o.skuText}>{o.skuText}</div> : null}
+                              {o.count ? <div className="text-[11px] text-slate-500">{o.count}</div> : null}
+                            </div>
+                            {draft ? (
+                              <button 
+                                type="button" 
+                                onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey); }}
+                                className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors whitespace-nowrap"
+                              >
+                                {isExpanded ? "收起草稿" : "查看草稿"}
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </label>
+                      
+                      {draft && isExpanded && (
+                        <div className="border-t p-3 bg-slate-50 space-y-3 shadow-inner">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs font-semibold text-slate-700">生成结果（{draft.rating}星）</div>
+                            {o.reviewUrl && (
+                              <a href={o.reviewUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline font-semibold">
+                                去评价页 →
+                              </a>
+                            )}
+                          </div>
+                          
+                          {/* 短草稿 */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-semibold">短</div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-short`] || fillStatus[`${o.orderKey}-short`]}</span>
+                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void copy(`${o.orderKey}-short`, draft.draft_short)}>
+                                  复制
+                                </button>
+                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl)}>
+                                  填入
+                                </button>
+                              </div>
+                            </div>
+                            <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-white p-2 rounded border border-slate-200">{draft.draft_short}</div>
+                          </div>
 
-                  {/* 中草稿 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold">中</div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-mid`] || fillStatus[`${o.orderKey}-mid`]}</span>
-                        <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${o.orderKey}-mid`, draft.draft_mid)}>
-                          复制
-                        </button>
-                        <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl)}>
-                          填入
-                        </button>
-                      </div>
-                    </div>
-                    <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-slate-50 p-2 rounded border border-slate-100">{draft.draft_mid}</div>
-                  </div>
+                          {/* 中草稿 */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-semibold">中</div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-mid`] || fillStatus[`${o.orderKey}-mid`]}</span>
+                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void copy(`${o.orderKey}-mid`, draft.draft_mid)}>
+                                  复制
+                                </button>
+                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl)}>
+                                  填入
+                                </button>
+                              </div>
+                            </div>
+                            <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-white p-2 rounded border border-slate-200">{draft.draft_mid}</div>
+                          </div>
 
-                  {/* 长草稿 */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold">长</div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-long`] || fillStatus[`${o.orderKey}-long`]}</span>
-                        <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void copy(`${o.orderKey}-long`, draft.draft_long)}>
-                          复制
-                        </button>
-                        <button className="rounded border px-2 py-1 text-xs" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl)}>
-                          填入
-                        </button>
-                      </div>
+                          {/* 长草稿 */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs font-semibold">长</div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-long`] || fillStatus[`${o.orderKey}-long`]}</span>
+                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void copy(`${o.orderKey}-long`, draft.draft_long)}>
+                                  复制
+                                </button>
+                                <button className="rounded border px-2 py-1 text-xs bg-white" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl)}>
+                                  填入
+                                </button>
+                              </div>
+                            </div>
+                            <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-white p-2 rounded border border-slate-200">{draft.draft_long}</div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-slate-50 p-2 rounded border border-slate-100">{draft.draft_long}</div>
-                  </div>
-
-                </div>
-              )}
+                  )
+                })}
+              </div>
             </div>
           )
         })}

@@ -9,20 +9,30 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
   
   // 京东订单列表页 (order.jd.com) 的结构通常是一个 table.order-tb，每个订单对应一个/多个 tbody
   // 每个订单包含一个 header tr.tr-th（里面有订单号）和至少一个商品行 tr.tr-bd
-  const tbodys = Array.from(doc.querySelectorAll<HTMLTableSectionElement>('table.order-tb tbody[id^="tb-"]'))
+  const tbodys = Array.from(doc.querySelectorAll<HTMLTableSectionElement>('.mycomment-table tbody, table.order-tb tbody[id^="tb-"], table.order-tb tbody'))
   
   for (const tbody of tbodys) {
+    // 如果是那种纯分隔的 tbody (比如 class="sep-row" 的包裹)，跳过
+    if (tbody.querySelector('.sep-row') && !tbody.querySelector('.tr-th') && !tbody.querySelector('.tr-bd')) continue
+
     // 提取订单号
-    const orderIdEl = tbody.querySelector('.number a[name="orderIdLinks"], .number [id^="idUrl"]')
+    const orderIdEl = tbody.querySelector('.number a[name="orderIdLinks"], .number [id^="idUrl"], .number a')
     let orderKey = ""
     if (orderIdEl) {
       orderKey = text(orderIdEl)
     } else {
-      // 兜底：尝试从 tbody ID 中提取
       const match = tbody.id.match(/\d{10,}/)
       if (match) orderKey = match[0]
     }
-    if (!orderKey) continue
+    // 有些旧版或者特殊的列表没有包裹 tbody，但只要能抓到 tr-bd 我们也可以容忍，所以不在这里强制 continue
+    
+    // 提取订单日期
+    const dateEl = tbody.querySelector('.dealtime')
+    const date = dateEl?.getAttribute('title') || text(dateEl) || undefined
+    
+    // 提取收货人
+    const consigneeEl = tbody.querySelector('.consignee .txt, .consignee')
+    const consignee = consigneeEl ? text(consigneeEl) : undefined
 
     // 查找该 tbody 下的所有商品行
     const productRows = Array.from(tbody.querySelectorAll<HTMLTableRowElement>('tr.tr-bd'))
@@ -36,6 +46,10 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       if (!title || title.length < 2) continue
       
       const itemUrl = nameEl.href ? new URL(nameEl.href, location.href).toString() : undefined
+      
+      // 提取商品数量
+      const countEl = row.querySelector('.goods-number')
+      const count = countEl ? text(countEl) : undefined
       
       // 查找商品规格（如果有）
       const skuEl = row.querySelector('.p-extra .o-info')
@@ -79,6 +93,10 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       items.push({ 
         platform: "jd", 
         orderKey: uniqueOrderKey, // 使用唯一 Key
+        orderId: orderKey || undefined, // 真正的订单号
+        date,
+        count,
+        consignee,
         title, 
         itemUrl, 
         reviewUrl,

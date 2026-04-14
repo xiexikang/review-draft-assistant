@@ -5,6 +5,10 @@ export type Context = "order_list_pending_review" | "review_page" | "unknown"
 export type OrderItem = {
   platform: Exclude<Platform, "unknown">
   orderKey: string
+  orderId?: string
+  date?: string
+  count?: string
+  consignee?: string
   title: string
   skuText?: string
   itemUrl?: string
