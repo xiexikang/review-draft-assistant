@@ -2,13 +2,24 @@ import type { ProviderConfig } from "../../shared/types"
 import type { ProviderAdapter } from "./types"
 
 export const zhipuProvider: ProviderAdapter = {
-  defaultBaseUrl: "https://open.bigmodel.cn",
+  defaultBaseUrl: "https://open.bigmodel.cn/api/paas/v4",
   recommendedModels: ["glm-4.7", "glm-5.1", "glm-4-flash", "glm-4"],
   requiredExtraFields: [],
   buildRequest: (config: ProviderConfig, prompt: string) => {
-    const baseUrl = config.baseUrl?.trim() || "https://open.bigmodel.cn"
+    let baseUrl = config.baseUrl?.trim() || "https://open.bigmodel.cn/api/paas/v4"
+    
+    // Auto-fix for users who only entered the root domain
+    const stripped = baseUrl.replace(/\/$/, '')
+    if (stripped === "https://open.bigmodel.cn" || stripped === "http://open.bigmodel.cn") {
+      baseUrl = `${stripped}/api/paas/v4`
+    }
+    
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '')
+    
+    // Some proxies might already append /v1 or /api/paas/v4.
+    // We just append /chat/completions directly.
     return {
-      url: `${baseUrl}/v1/chat/completions`,
+      url: `${cleanBaseUrl}/chat/completions`,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey}`,
