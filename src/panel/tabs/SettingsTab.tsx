@@ -77,10 +77,10 @@ export function SettingsTab() {
 
   return (
     <div className="space-y-3">
-      <div className="text-sm font-semibold">设置</div>
+      <div className="text-sm font-semibold">AI设置</div>
 
       <label className="block space-y-1">
-        <div className="text-xs text-slate-600">厂商</div>
+        <div className="text-xs text-slate-600">大模型厂商</div>
         <select
           className="w-full rounded border px-2 py-1 text-sm"
           value={provider}

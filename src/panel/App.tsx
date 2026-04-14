@@ -37,7 +37,7 @@ export function App() {
             onClick={() => setTab("settings")}
             type="button"
           >
-            设置
+            AI设置
           </button>
         </div>
       </div>
