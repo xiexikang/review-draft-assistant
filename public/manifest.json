@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Review Draft Assistant",
+  "name": "AI 一键评价助手",
   "version": "0.1.0",
-  "description": "批量生成评价草稿并在评价页一键填入（不自动提交）",
-  "action": { "default_title": "Review Draft Assistant" },
+  "description": "批量生成评价草稿并在评价页一键填入（可选一键发表）",
+  "action": { "default_title": "AI 一键评价助手" },
   "permissions": ["storage", "sidePanel", "tabs"],
   "host_permissions": [
     "https://*.jd.com/*",

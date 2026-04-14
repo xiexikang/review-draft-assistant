@@ -15,7 +15,7 @@ export function App() {
   return (
     <div className="h-screen w-full bg-white text-slate-900">
       <div className="flex items-center justify-between border-b px-3 py-2">
-        <div className="text-sm font-semibold">Review Draft Assistant</div>
+        <div className="text-sm font-semibold">AI 一键评价助手</div>
         <div className="flex gap-1">
           <button
             className={
@@ -45,4 +45,3 @@ export function App() {
     </div>
   )
 }
-
