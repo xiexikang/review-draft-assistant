@@ -65,8 +65,8 @@ export function OrdersTab() {
   const selectedCount = useMemo(() => Object.values(selected).filter(Boolean).length, [selected])
   const selectedOrders = useMemo(() => orders.filter((o) => selected[o.orderKey]), [orders, selected])
 
-  async function onGenerate() {
-    if (selectedOrders.length === 0) {
+  async function generateForOrders(ordersToGen: OrderItem[]) {
+    if (ordersToGen.length === 0) {
       setGenStatus("请先选择订单")
       return
     }
@@ -76,7 +76,7 @@ export function OrdersTab() {
       return
     }
     setGenStatus("已开始生成…")
-    setProgress({ done: 0, total: selectedOrders.length })
+    setProgress({ done: 0, total: ordersToGen.length })
 
     const tags = tagsInput
       .split(",")
@@ -87,12 +87,16 @@ export function OrdersTab() {
       type: "GEN_DRAFTS_START",
       payload: {
         providerConfig,
-        orders: selectedOrders,
+        orders: ordersToGen,
         rating,
         tags,
         style: style.trim() || undefined,
       },
     })
+  }
+
+  async function onGenerate() {
+    await generateForOrders(selectedOrders)
   }
 
   async function copy(id: string, text: string) {
@@ -292,15 +296,28 @@ export function OrdersTab() {
                               {o.skuText ? <div className="text-[11px] text-slate-500 truncate max-w-[150px]" title={o.skuText}>{o.skuText}</div> : null}
                               {o.count ? <div className="text-[11px] text-slate-500">{o.count}</div> : null}
                             </div>
-                            {draft ? (
+                            <div className="flex items-center gap-2">
                               <button 
                                 type="button" 
-                                onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey); }}
-                                className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors whitespace-nowrap"
+                                onClick={(e) => { 
+                                  e.preventDefault()
+                                  generateForOrders([o])
+                                  setExpanded(prev => ({ ...prev, [o.orderKey]: true }))
+                                }}
+                                className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors whitespace-nowrap font-medium"
                               >
-                                {isExpanded ? "收起草稿" : "查看草稿"}
+                                {draft ? "重新生成" : "一键生成"}
                               </button>
-                            ) : null}
+                              {draft ? (
+                                <button 
+                                  type="button" 
+                                  onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey); }}
+                                  className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors whitespace-nowrap"
+                                >
+                                  {isExpanded ? "收起草稿" : "查看草稿"}
+                                </button>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       </label>
