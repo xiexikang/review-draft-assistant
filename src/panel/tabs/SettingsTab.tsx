@@ -5,8 +5,28 @@ import { sendToBackground } from "../../shared/messages"
 import { getProviderConfig, setProviderConfig } from "../../shared/storage"
 
 const providerModels: Record<ProviderId, string[]> = {
-  openai: ["gpt-4o-mini", "gpt-4.1-mini"],
-  claude: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
+  openai: [
+    "gpt-5.4-pro",
+    "gpt-5.4",
+    "gpt-5.4-mini",
+    "gpt-5.4-nano",
+    "gpt-5.3-chat",
+    "gpt-5.3-codex",
+    "gpt-5.2-pro",
+    "gpt-5.2",
+    "o3-deep-research",
+    "o4-mini-deep-research"
+  ],
+  claude: [
+    "claude-sonnet-4.6",
+    "claude-opus-4.6",
+    "claude-sonnet-4.5",
+    "claude-opus-4.5",
+    "claude-haiku-4.5",
+    "claude-sonnet-4",
+    "claude-opus-4",
+    "claude-3-haiku"
+  ],
   zhipu: ["glm-4.7", "glm-5.1", "glm-4-flash", "glm-4"],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
 }

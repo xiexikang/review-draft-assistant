@@ -3,7 +3,16 @@ import type { ProviderAdapter } from "./types"
 
 export const claudeProvider: ProviderAdapter = {
   defaultBaseUrl: "https://api.anthropic.com",
-  recommendedModels: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
+  recommendedModels: [
+    "claude-sonnet-4.6",
+    "claude-opus-4.6",
+    "claude-sonnet-4.5",
+    "claude-opus-4.5",
+    "claude-haiku-4.5",
+    "claude-sonnet-4",
+    "claude-opus-4",
+    "claude-3-haiku"
+  ],
   requiredExtraFields: [],
   buildRequest: (config: ProviderConfig, prompt: string) => {
     const baseUrl = config.baseUrl?.trim() || "https://api.anthropic.com"
