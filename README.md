@@ -5,7 +5,7 @@
 ## ✨ 核心功能
 
 - 🛍️ **多电商平台支持**：支持京东（JD）、淘宝（Taobao）待评价列表的数据抓取与展示。
-- 🤖 **多 AI 模型接入**：内置 OpenAI、Anthropic (Claude)、智谱（Zhipu / Z.ai）、DeepSeek、Qwen（通义千问）、MiniMax、Kimi（Moonshot）等；支持自定义 Base URL / API Key / 温度 / maxTokens。
+- 🤖 **多 AI 模型接入**：内置 OpenAI、Anthropic (Claude)、智谱（Zhipu / Z.ai）、DeepSeek、Qwen（通义千问）、MiniMax、Kimi（Moonshot）、OpenRouter 等；支持自定义 Base URL / API Key / 温度 / maxTokens。
 - 📝 **生成评价草稿**：支持根据星级、风格（如“简洁、口语化”）和自定义标签（如“物流快、包装好”）生成短/中/长三种字数的草稿。
 - ⚡ **批量生成 + 单条一键生成**：支持勾选多单批量生成，也支持在订单列表中对单个订单“一键生成 / 重新生成”。
 - 🧩 **自动填入与可选一键发表**：自动识别评价输入框并填入、自动打星，并支持“填入并发表”（会触发页面提交）。
@@ -56,6 +56,7 @@ pnpm build
 
 1. **配置大模型**：
    打开扩展侧边栏面板，进入 **“AI设置”**，选择大模型厂商，填入 API Key 与模型名称并点击“保存”。支持“测试连接”验证配置是否正确。
+   - 推荐：如果你使用 OpenRouter（有免费额度），直接把厂商选成 OpenRouter，并在模型里填 `provider/model`（例如 `openai/gpt-5.4-mini`）。
 2. **抓取待评价订单**：
    在浏览器中打开京东的待评价页面（如 `https://club.jd.com/myJdcomments/myJdcomment.action`）或淘宝的待评价页面。
 3. **刷新订单数据**：
@@ -68,10 +69,11 @@ pnpm build
 
 ## 🔧 大模型配置（Base URL）
 
-下表为各厂商常见 Base URL（也支持自定义代理）。如使用 OpenRouter，可将 Base URL 设置为 `https://openrouter.ai/api/v1`，插件会自动补全 OpenRouter 的模型前缀（例如 `openai/`、`anthropic/` 等）。
+下表为各厂商常见 Base URL（也支持自定义代理）。
 
 | 厂商 | 建议 Base URL | 说明 |
 | --- | --- | --- |
+| OpenRouter | `https://openrouter.ai/api/v1` | 使用 `provider/model` 形式（例如 `openai/gpt-5.4-mini`），可用 OpenRouter API Key（通常带免费额度） |
 | OpenAI | `https://api.openai.com` | 也可切换到 OpenRouter |
 | Anthropic (Claude) | `https://api.anthropic.com` | 使用 OpenRouter 时走 OpenAI 兼容 `/chat/completions` |
 | 智谱（Zhipu / Z.ai） | `https://open.bigmodel.cn/api/paas/v4` 或 `https://api.z.ai/api/paas/v4` | OpenAI 兼容接口 |
@@ -79,6 +81,26 @@ pnpm build
 | Qwen（通义千问） | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI 兼容接口 |
 | MiniMax | `https://api.minimax.chat/v1` | OpenAI 兼容接口 |
 | Kimi（Moonshot） | `https://api.moonshot.cn/v1` | OpenAI 兼容接口 |
+
+## 🧩 OpenRouter 常用模型示例
+
+OpenRouter 的模型名一般是 `provider/model`：
+
+| 类型 | 示例 |
+| --- | --- |
+| OpenAI | `openai/gpt-5.4-mini` |
+| Claude | `anthropic/claude-sonnet-4.6` |
+| 智谱（Z.ai） | `z-ai/glm-4.7` |
+| Qwen | `qwen/qwen3.6-plus` |
+| DeepSeek | `deepseek/deepseek-chat` |
+| Kimi | `moonshotai/kimi-k2` |
+| MiniMax | `minimax/minimax-m2.5` |
+
+## 🧯 常见问题
+
+### 1) OpenRouter 连接失败：String contains non ISO-8859-1 code point
+
+这是浏览器对 HTTP Header 的限制导致的（Header 值不能包含中文等非 Latin-1 字符）。更新到最新版本后已修复（将 OpenRouter 的 `X-Title` 头改为纯英文）。
 
 ## 📜 许可证 (License)
 
