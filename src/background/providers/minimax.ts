@@ -24,7 +24,7 @@ export const minimaxProvider: ProviderAdapter = {
 
     if (cleanBaseUrl.includes("openrouter.ai")) {
       headers["HTTP-Referer"] = "https://github.com/xiexikang/review-draft-assistant"
-      headers["X-Title"] = "AI 一键评价助手"
+      headers["X-Title"] = "AI Review Draft Assistant"
     }
 
     const url = cleanBaseUrl.endsWith("/v1")

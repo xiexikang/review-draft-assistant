@@ -22,7 +22,7 @@ export const openrouterProvider: ProviderAdapter = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${config.apiKey}`,
       "HTTP-Referer": "https://github.com/xiexikang/review-draft-assistant",
-      "X-Title": "AI 一键评价助手",
+      "X-Title": "AI Review Draft Assistant",
     }
 
     const url = cleanBaseUrl.endsWith("/v1") ? `${cleanBaseUrl}/chat/completions` : `${cleanBaseUrl}/v1/chat/completions`
@@ -44,4 +44,3 @@ export const openrouterProvider: ProviderAdapter = {
   parseText: (respJson: any) => respJson?.choices?.[0]?.message?.content ?? "",
   testRequest: (config: ProviderConfig) => openrouterProvider.buildRequest(config, "[{\"ok\":true}]"),
 }
-
