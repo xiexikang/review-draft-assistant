@@ -27,7 +27,17 @@ const providerModels: Record<ProviderId, string[]> = {
     "claude-opus-4",
     "claude-3-haiku"
   ],
-  zhipu: ["glm-4.7", "glm-5.1", "glm-4-flash", "glm-4"],
+  zhipu: [
+    "glm-5.1",
+    "glm-5",
+    "glm-5-turbo",
+    "glm-4.7",
+    "glm-4.7-flash",
+    "glm-4.6",
+    "glm-4-32b",
+    "glm-4-flash",
+    "glm-4",
+  ],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
   qwen: [
     "qwen3.6-plus",

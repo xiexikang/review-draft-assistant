@@ -3,7 +3,17 @@ import type { ProviderAdapter } from "./types"
 
 export const zhipuProvider: ProviderAdapter = {
   defaultBaseUrl: "https://open.bigmodel.cn/api/paas/v4",
-  recommendedModels: ["glm-4.7", "glm-5.1", "glm-4-flash", "glm-4"],
+  recommendedModels: [
+    "glm-5.1",
+    "glm-5",
+    "glm-5-turbo",
+    "glm-4.7",
+    "glm-4.7-flash",
+    "glm-4.6",
+    "glm-4-32b",
+    "glm-4-flash",
+    "glm-4",
+  ],
   requiredExtraFields: [],
   buildRequest: (config: ProviderConfig, prompt: string) => {
     let baseUrl = config.baseUrl?.trim() || "https://open.bigmodel.cn/api/paas/v4"
