@@ -69,7 +69,7 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
       
       const imgEl = row.querySelector('.p-img img, .goods-item img') as HTMLImageElement | null
-      let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.src || undefined
+      let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.getAttribute('src') || imgEl?.src || undefined
       if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
       
       items.push({ 
@@ -100,7 +100,7 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
       const reviewUrl = reviewBtn?.href ? new URL(reviewBtn.href, location.href).toString() : undefined
       
       const imgEl = container.querySelector('.p-img img, .goods-item img, img') as HTMLImageElement | null
-      let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.src || undefined
+      let imageUrl = imgEl?.getAttribute('data-lazy-img') || imgEl?.getAttribute('src') || imgEl?.src || undefined
       if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
       
       // 尝试找订单号

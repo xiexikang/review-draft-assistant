@@ -72,7 +72,7 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     const skuText = skuEl ? text(skuEl) : undefined
     
     const imgEl = container.querySelector('.item-pic img, .p-img img, .pic img, img') as HTMLImageElement | null
-    let imageUrl = imgEl?.getAttribute('data-src') || imgEl?.src || undefined
+    let imageUrl = imgEl?.getAttribute('data-src') || imgEl?.getAttribute('src') || imgEl?.src || undefined
     if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
     
     items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
