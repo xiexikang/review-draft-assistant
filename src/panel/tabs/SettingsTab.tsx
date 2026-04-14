@@ -22,6 +22,13 @@ export function SettingsTab() {
   const [status, setStatus] = useState<string>("")
 
   const models = useMemo(() => providerModels[provider], [provider])
+  const baseUrlPlaceholder = useMemo(() => {
+    if (provider === "zhipu")
+      return "中国区：https://open.bigmodel.cn/api/paas/v4  国际区：https://api.z.ai/api/paas/v4  OpenRouter：https://openrouter.ai/api/v1"
+    if (provider === "openai") return "https://api.openai.com"
+    if (provider === "claude") return "https://api.anthropic.com"
+    return "https://api.deepseek.com"
+  }, [provider])
 
   useEffect(() => {
     void (async () => {
@@ -146,6 +153,7 @@ export function SettingsTab() {
               className="w-full rounded border px-2 py-1 text-sm"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder={baseUrlPlaceholder}
             />
           </label>
           <label className="block space-y-1">

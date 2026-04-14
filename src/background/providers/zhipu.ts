@@ -10,7 +10,12 @@ export const zhipuProvider: ProviderAdapter = {
     
     // Auto-fix for users who only entered the root domain
     const stripped = baseUrl.replace(/\/$/, '')
-    if (stripped === "https://open.bigmodel.cn" || stripped === "http://open.bigmodel.cn") {
+    if (
+      stripped === "https://open.bigmodel.cn" ||
+      stripped === "http://open.bigmodel.cn" ||
+      stripped === "https://api.z.ai" ||
+      stripped === "http://api.z.ai"
+    ) {
       baseUrl = `${stripped}/api/paas/v4`
     }
     
@@ -18,12 +23,19 @@ export const zhipuProvider: ProviderAdapter = {
     
     // Some proxies might already append /v1 or /api/paas/v4.
     // We just append /chat/completions directly.
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`,
+    }
+
+    if (cleanBaseUrl.includes("openrouter.ai")) {
+      headers["HTTP-Referer"] = "https://github.com/xiexikang/review-draft-assistant"
+      headers["X-Title"] = "AI 一键评价助手"
+    }
+
     return {
       url: `${cleanBaseUrl}/chat/completions`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
+      headers,
       body: {
         model: config.model,
         temperature: config.temperature ?? 0.7,
@@ -38,4 +50,3 @@ export const zhipuProvider: ProviderAdapter = {
   parseText: (respJson: any) => respJson?.choices?.[0]?.message?.content ?? "",
   testRequest: (config: ProviderConfig) => zhipuProvider.buildRequest(config, "[{\"ok\":true}]"),
 }
-

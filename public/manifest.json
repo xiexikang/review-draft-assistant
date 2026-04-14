@@ -22,7 +22,9 @@
     "https://*.taobao.com/*",
     "https://api.openai.com/*",
     "https://api.anthropic.com/*",
+    "https://api.z.ai/*",
     "https://open.bigmodel.cn/*",
+    "https://openrouter.ai/*",
     "https://api.deepseek.com/*"
   ],
   "background": { "service_worker": "background/index.js", "type": "module" },
