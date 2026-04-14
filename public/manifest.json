@@ -3,7 +3,19 @@
   "name": "AI 一键评价助手",
   "version": "0.1.0",
   "description": "批量生成评价草稿并在评价页一键填入（可选一键发表）",
-  "action": { "default_title": "AI 一键评价助手" },
+  "action": {
+    "default_title": "AI 一键评价助手",
+    "default_icon": {
+      "16": "icon_16.png",
+      "48": "icon_48.png",
+      "128": "icon_128.png"
+    }
+  },
+  "icons": {
+    "16": "icon_16.png",
+    "48": "icon_48.png",
+    "128": "icon_128.png"
+  },
   "permissions": ["storage", "sidePanel", "tabs"],
   "host_permissions": [
     "https://*.jd.com/*",
