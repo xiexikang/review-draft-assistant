@@ -5,11 +5,17 @@ import { claudeProvider } from "./providers/claude"
 import { deepseekProvider } from "./providers/deepseek"
 import { openaiProvider } from "./providers/openai"
 import { zhipuProvider } from "./providers/zhipu"
+import { qwenProvider } from "./providers/qwen"
+import { minimaxProvider } from "./providers/minimax"
+import { moonshotProvider } from "./providers/moonshot"
 
 function getProvider(provider: ProviderConfig["provider"]) {
   if (provider === "openai") return openaiProvider
   if (provider === "claude") return claudeProvider
   if (provider === "zhipu") return zhipuProvider
+  if (provider === "qwen") return qwenProvider
+  if (provider === "minimax") return minimaxProvider
+  if (provider === "moonshot") return moonshotProvider
   return deepseekProvider
 }
 

@@ -29,6 +29,37 @@ const providerModels: Record<ProviderId, string[]> = {
   ],
   zhipu: ["glm-4.7", "glm-5.1", "glm-4-flash", "glm-4"],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
+  qwen: [
+    "qwen3.6-plus",
+    "qwen3.6-plus-preview",
+    "qwen3.5-9b",
+    "qwen3.5-35b-a3b",
+    "qwen3.5-27b",
+    "qwen3.5-122b-a10b",
+    "qwen3.5-flash-02-23",
+    "qwen3.5-plus-02-15",
+    "qwen3.5-397b-a17b",
+    "qwen3-max-thinking",
+    "qwen3-coder-next",
+    "qwen3-max"
+  ],
+  minimax: [
+    "minimax-m2.7",
+    "minimax-m2.5",
+    "minimax-m2-her",
+    "minimax-m2.1",
+    "minimax-m2",
+    "minimax-m1",
+    "minimax-01"
+  ],
+  moonshot: [
+    "kimi-k2.5",
+    "kimi-k2-thinking",
+    "kimi-k2-0905",
+    "kimi-k2",
+    "kimi-dev-72b",
+    "moonlight-16b-a3b-instruct"
+  ]
 }
 
 export function SettingsTab() {
@@ -47,6 +78,9 @@ export function SettingsTab() {
       return "中国区：https://open.bigmodel.cn/api/paas/v4  国际区：https://api.z.ai/api/paas/v4  OpenRouter：https://openrouter.ai/api/v1"
     if (provider === "openai") return "https://api.openai.com"
     if (provider === "claude") return "https://api.anthropic.com"
+    if (provider === "qwen") return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    if (provider === "minimax") return "https://api.minimax.chat/v1"
+    if (provider === "moonshot") return "https://api.moonshot.cn/v1"
     return "https://api.deepseek.com"
   }, [provider])
 
@@ -117,6 +151,9 @@ export function SettingsTab() {
           <option value="claude">Claude</option>
           <option value="zhipu">智谱</option>
           <option value="deepseek">DeepSeek</option>
+          <option value="qwen">Qwen (通义千问)</option>
+          <option value="minimax">MiniMax</option>
+          <option value="moonshot">Kimi (Moonshot)</option>
         </select>
       </label>
 
