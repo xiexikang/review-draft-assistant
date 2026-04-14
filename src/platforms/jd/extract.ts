@@ -28,7 +28,8 @@ export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
     
     // 提取订单日期
     const dateEl = tbody.querySelector('.dealtime')
-    const date = dateEl?.getAttribute('title') || text(dateEl) || undefined
+    // 优先提取直接显示的文本，因为 title 属性里的日期可能是错的或者是固定的旧时间
+    const date = text(dateEl) || dateEl?.getAttribute('title') || undefined
     
     // 提取收货人
     const consigneeEl = tbody.querySelector('.consignee .txt, .consignee')
