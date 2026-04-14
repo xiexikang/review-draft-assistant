@@ -46,11 +46,15 @@ export type PlatformFillReview = {
   payload: { platform: Platform; orderKey: string; text: string; rating: number; submit?: boolean }
 }
 
+export type RequestSyncOrders = {
+  type: "REQUEST_SYNC_ORDERS"
+}
+
 export type MessageToBackground = ProviderTest | GenDraftsStart
 export type MessageFromBackground = ProviderTestResult | GenDraftsProgress | GenDraftsResult | GenDraftsError
 
 export type MessageToPanel = PlatformOrdersUpdated | MessageFromBackground
-export type MessageToContent = PlatformFillReview
+export type MessageToContent = PlatformFillReview | RequestSyncOrders
 
 export async function sendToBackground<T extends MessageToBackground, R>(msg: T): Promise<R> {
   return new Promise((resolve, reject) => {

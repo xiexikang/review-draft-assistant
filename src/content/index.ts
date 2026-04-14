@@ -16,6 +16,11 @@ async function syncOrders() {
 }
 
 chrome.runtime.onMessage.addListener((message: MessageToContent, _sender, sendResponse) => {
+  if (message.type === "REQUEST_SYNC_ORDERS") {
+    void syncOrders().then(() => sendResponse({ ok: true }))
+    return true
+  }
+
   if (message.type !== "PLATFORM_FILL_REVIEW") return false
   const platform = getPlatformByUrl(location.href)
   const adapter = getAdapter(platform)

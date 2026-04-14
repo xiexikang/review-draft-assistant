@@ -159,9 +159,32 @@ export function OrdersTab() {
     return platform
   }
 
+  async function refreshCurrentTab() {
+    try {
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+      if (tabs[0]?.id) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: "REQUEST_SYNC_ORDERS" }, () => {
+          if (chrome.runtime.lastError) {
+             console.warn("刷新请求未送达，可能不在支持的页面:", chrome.runtime.lastError.message)
+          }
+        })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   return (
     <div className="space-y-2">
-      <div className="text-sm font-semibold">订单</div>
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold">订单</div>
+        <button 
+          onClick={refreshCurrentTab} 
+          className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors"
+        >
+          刷新
+        </button>
+      </div>
       <div className="text-xs text-slate-600">
         平台：<span className="font-bold">{getPlatformName(meta.platform)}</span> / 上下文：<span className="font-bold">{meta.context}</span> / 识别：<span className="font-bold">{orders.length}</span> / 已选：<span className="font-bold">{selectedCount}</span>
       </div>
