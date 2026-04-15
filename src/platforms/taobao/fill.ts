@@ -14,7 +14,20 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
     const sku = parts[1] || parts[0]
     if (sku) {
       const link = doc.querySelector(`a[href*="${sku}.htm"], a[href*="${sku}"]`)
-      targetContainer = link?.closest('.rate-item, .item, .comment-box, .box') ?? null
+      targetContainer = link?.closest('.rate-item, .item, .comment-box, .box, .compose-order') ?? null
+      if (targetContainer) {
+        textarea = (targetContainer.querySelector("textarea") as HTMLTextAreaElement | null) ??
+                   (targetContainer.querySelector("input[type='text']") as HTMLInputElement | null)
+      }
+    }
+  }
+
+  // 尝试直接通过天猫特有的 data-bizoid 定位容器
+  if (!textarea && orderKey) {
+    const parts = orderKey.split('-')
+    const tradeId = parts[0]
+    if (tradeId) {
+      targetContainer = doc.querySelector(`.compose-order[data-bizoid="${tradeId}"]`)
       if (targetContainer) {
         textarea = (targetContainer.querySelector("textarea") as HTMLTextAreaElement | null) ??
                    (targetContainer.querySelector("input[type='text']") as HTMLInputElement | null)
@@ -26,7 +39,7 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
     textarea = (doc.querySelector("textarea") as HTMLTextAreaElement | null) ??
                (doc.querySelector("input[type='text']") as HTMLInputElement | null)
     if (textarea) {
-      targetContainer = textarea.closest('.rate-item, .item, .comment-box, .box') ?? doc.body
+      targetContainer = textarea.closest('.rate-item, .item, .comment-box, .box, .compose-order') ?? doc.body
     }
   }
 
