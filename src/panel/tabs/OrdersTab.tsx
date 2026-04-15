@@ -110,7 +110,7 @@ export function OrdersTab() {
   async function fill(id: string, text: string, orderKey: string, draftRating: number, reviewUrl?: string, submit: boolean = false) {
     try {
       setFillStatus((prev) => ({ ...prev, [id]: submit ? "发表中..." : "填入中..." }))
-      const tabs = await chrome.tabs.query({ url: ["*://*.jd.com/*", "*://*.taobao.com/*"] })
+      const tabs = await chrome.tabs.query({ url: ["*://*.jd.com/*", "*://*.taobao.com/*", "*://*.tmall.com/*"] })
       const activeTab = tabs.find(t => t.active) || tabs[0]
       
       if (!activeTab?.id) {
@@ -118,7 +118,7 @@ export function OrdersTab() {
         return
       }
       
-      const isReviewPage = activeTab.url?.includes('orderVoucher.action') || activeTab.url?.includes('myJdcomment.action') || activeTab.url?.includes('rate.taobao.com') || activeTab.url?.includes('rate.tmall.com')
+      const isReviewPage = activeTab.url?.includes('orderVoucher.action') || activeTab.url?.includes('myJdcomment.action') || activeTab.url?.includes('rate.taobao.com') || activeTab.url?.includes('rate.tmall.com') || activeTab.url?.includes('ratewrite.tmall.com')
       
       const msg: PlatformFillReview = {
         type: "PLATFORM_FILL_REVIEW",
