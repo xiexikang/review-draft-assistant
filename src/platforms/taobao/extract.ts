@@ -50,6 +50,7 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     const txt = text(a)
     if (!txt.includes('评价') && !txt.includes('追加评价')) return false
     if (a.closest('.nav, .tab, .menu, .header, .top')) return false
+    if (txt === '评价管理') return false // 排除导航栏等处的“评价管理”按钮
     if (a.href && (a.href.includes('rate.taobao.com') || a.href.includes('rate.tmall.com'))) return true
     if (a.classList.contains('btn-review') || a.classList.contains('J_MakePoint')) return true
     return false
