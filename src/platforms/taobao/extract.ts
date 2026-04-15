@@ -117,8 +117,12 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
       }
     }
 
-    // 拼凑评价页 URL (新版页面评价按钮可能没有 a 标签，我们自己构造 URL)
-    const reviewUrl = `https://rate.taobao.com/app/rate/index.htm?tradeId=${orderKey}`
+    // 拼凑评价页 URL
+    // 如果商品链接包含 detail.tmall.com，则使用天猫评价链接，否则使用默认的淘宝评价链接
+    const isTmall = itemUrl && itemUrl.includes('detail.tmall.com')
+    const reviewUrl = isTmall 
+      ? `https://ratewrite.tmall.com/rate_detail.htm?tradeID=${orderKey}`
+      : `https://rate.taobao.com/app/rate/index.htm?tradeId=${orderKey}`
 
     items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
   }

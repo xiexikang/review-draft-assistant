@@ -20,6 +20,7 @@
   "host_permissions": [
     "https://*.jd.com/*",
     "https://*.taobao.com/*",
+    "https://*.tmall.com/*",
     "https://api.openai.com/*",
     "https://api.anthropic.com/*",
     "https://api.z.ai/*",
@@ -33,7 +34,7 @@
   "background": { "service_worker": "background/index.js", "type": "module" },
   "content_scripts": [
     {
-      "matches": ["https://*.jd.com/*", "https://*.taobao.com/*"],
+      "matches": ["https://*.jd.com/*", "https://*.taobao.com/*", "https://*.tmall.com/*"],
       "js": ["content/index.js"],
       "run_at": "document_idle"
     }
