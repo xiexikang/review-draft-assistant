@@ -118,10 +118,12 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     }
 
     // 拼凑评价页 URL
-    // 如果商品链接包含 detail.tmall.com，则使用天猫评价链接，否则使用默认的淘宝评价链接
-    const isTmall = itemUrl && itemUrl.includes('detail.tmall.com')
+    // 通过订单详情的链接来判断是否为天猫订单（因为天猫店的商品链接有时也会显示 item.taobao.com，但订单详情必然在 trade.tmall.com）
+    const detailLinkEl = container.querySelector('.shopInfoOrderDetail--kw7YiJQA') as HTMLAnchorElement | null
+    const isTmall = detailLinkEl && detailLinkEl.href.includes('trade.tmall.com')
+    
     const reviewUrl = isTmall 
-      ? `https://ratewrite.tmall.com/rate_detail.htm?tradeID=${orderKey}`
+      ? `https://ratewrite.tmall.com/rate_detail.htm?tradeID=${orderKey}#miaoposition`
       : `https://rate.taobao.com/app/rate/index.htm?tradeId=${orderKey}`
 
     items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
