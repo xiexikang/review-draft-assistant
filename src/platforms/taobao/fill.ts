@@ -79,7 +79,7 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
   if (submit) {
     setTimeout(() => {
       // 淘宝的发表按钮
-      const submitBtn = doc.querySelector('.J_SubmitReview, button[type="submit"], .btn-submit, .submit') as HTMLElement | null
+      const submitBtn = doc.querySelector('.J_SubmitReview, .compose-btn button, button[type="submit"], .btn-submit, .submit') as HTMLElement | null
       if (submitBtn) {
         submitBtn.click()
       }
