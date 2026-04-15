@@ -43,22 +43,20 @@ function stableOrderKey(actionUrl: string | undefined, container: Element, fallb
 }
 
 export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
+  const items: OrderItem[] = []
+
+  // 1. 旧版结构：通过“评价”链接反查订单
   const actionLinks = Array.from(doc.querySelectorAll<HTMLAnchorElement>('a')).filter(a => {
     const txt = text(a)
     if (!txt.includes('评价') && !txt.includes('追加评价')) return false
-    
     if (a.closest('.nav, .tab, .menu, .header, .top')) return false
-    
     if (a.href && (a.href.includes('rate.taobao.com') || a.href.includes('rate.tmall.com'))) return true
     if (a.classList.contains('btn-review') || a.classList.contains('J_MakePoint')) return true
-    
     return false
   })
 
-  const items: OrderItem[] = []
   for (const a of actionLinks) {
     const container = a.closest("tr, tbody, table, .item, .order, .order-item, .suborder") ?? a.parentElement ?? a
-    
     const titleEl = container.querySelector(".item-title, .baobei-name, a[href*='item.htm'], a[href*='detail.tmall.com']")
     const title = titleEl ? text(titleEl) : pickTitle(container)
     
@@ -75,6 +73,52 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     let imageUrl = imgEl?.getAttribute('data-src') || imgEl?.getAttribute('src') || imgEl?.src || undefined
     if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
     
+    items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
+  }
+
+  // 2. 新版结构（React DOM）：遍历订单容器 trade-bought-list-order-container
+  const newContainers = Array.from(doc.querySelectorAll('.trade-bought-list-order-container'))
+  for (const container of newContainers) {
+    // 找到所有“评价”按钮（可能是 div 模拟的按钮）
+    const ops = Array.from(container.querySelectorAll('.tbpc_boughtlist_orderItem_order_op'))
+    const hasReviewBtn = ops.some(op => text(op).includes('评价') || text(op).includes('追加评价'))
+    if (!hasReviewBtn) continue
+
+    // 提取订单号
+    let orderKey = ""
+    const orderIdEl = container.querySelector('.shopInfoOrderId--CVDgDEO2')
+    if (orderIdEl) {
+      const match = text(orderIdEl).match(/\d{15,}/)
+      if (match) orderKey = match[0]
+    }
+    if (!orderKey) continue
+
+    // 提取商品标题和链接
+    const titleEl = container.querySelector('.titleText--W0CIPGbq')
+    const title = titleEl ? text(titleEl) : ""
+    if (!title) continue
+    
+    const itemLinkEl = container.querySelector('.title--pLEC2yiw') as HTMLAnchorElement | null
+    const itemUrl = itemLinkEl?.href ? new URL(itemLinkEl.href, location.href).toString() : undefined
+
+    // 提取 SKU 信息
+    const skuEl = container.querySelector('.infoContent--bykGfoHq')
+    const skuText = skuEl ? text(skuEl) : undefined
+
+    // 提取图片
+    const imgEl = container.querySelector('.image--qmstcRYr') as HTMLElement | null
+    let imageUrl = undefined
+    if (imgEl && imgEl.style.backgroundImage) {
+      const bgMatch = imgEl.style.backgroundImage.match(/url\("?(.*?)"?\)/)
+      if (bgMatch && bgMatch[1]) {
+        imageUrl = bgMatch[1]
+        if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl
+      }
+    }
+
+    // 拼凑评价页 URL (新版页面评价按钮可能没有 a 标签，我们自己构造 URL)
+    const reviewUrl = `https://rate.taobao.com/app/rate/index.htm?tradeId=${orderKey}`
+
     items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
   }
 
