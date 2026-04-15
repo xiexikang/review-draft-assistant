@@ -10,7 +10,7 @@ export function getPlatformByUrl(url: string): Platform {
     const u = new URL(url)
     const h = u.hostname
     if (h.endsWith(".jd.com")) return "jd"
-    if (h.endsWith(".taobao.com")) return "taobao"
+    if (h.endsWith(".taobao.com") || h.endsWith(".tmall.com")) return "taobao"
     if (h.endsWith(".meituan.com")) return "meituan"
     if (h.endsWith(".douyin.com")) return "douyin"
     return "unknown"
