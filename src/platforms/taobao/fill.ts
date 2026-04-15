@@ -35,13 +35,27 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
   textarea.focus()
 
   if (rating && targetContainer) {
-    // 淘宝的星星选择器，通常在类似 ul.rate-star 或 .stars-wrap 下的 li / i
-    const starGroups = targetContainer.querySelectorAll('.rate-star, .stars-wrap, [class*="star"]')
-    for (const group of Array.from(starGroups)) {
-      // 淘宝可能是 li:nth-child(n) 或 i:nth-child(n)
+    // 1. 旧版淘宝的星星选择器，通常在类似 ul.rate-star 或 .stars-wrap 下的 li / i
+    const oldStarGroups = targetContainer.querySelectorAll('.rate-star, .stars-wrap, [class*="star"]')
+    for (const group of Array.from(oldStarGroups)) {
       const stars = Array.from(group.querySelectorAll('li, i, span.star')) as HTMLElement[]
       if (stars.length >= 5) {
         const targetStar = stars[rating - 1]
+        if (targetStar) {
+          targetStar.click()
+        }
+      }
+    }
+
+    // 2. 新版天猫 / 淘宝的星星选择器：.tm-rating-star-list 下的 div.J_ratingStar
+    const newStarGroups = targetContainer.querySelectorAll('.tm-rating-star-list, .rate-star-list')
+    for (const group of Array.from(newStarGroups)) {
+      // 获取当前星级组下的所有星星（可能是 data-star-value=1,2,3,4,5）
+      const stars = Array.from(group.querySelectorAll('.J_ratingStar, [data-star-value]')) as HTMLElement[]
+      // 为了安全，过滤出真正带 data-star-value 或者是按顺序的星标
+      if (stars.length >= 5) {
+        // 寻找符合 rating 数值的元素
+        const targetStar = stars.find(s => s.getAttribute('data-star-value') === String(rating)) || stars[rating - 1]
         if (targetStar) {
           targetStar.click()
         }
