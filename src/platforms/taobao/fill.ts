@@ -5,6 +5,59 @@ function setNativeValue(el: HTMLTextAreaElement | HTMLInputElement, value: strin
   el.dispatchEvent(new Event("change", { bubbles: true }))
 }
 
+function isElementVisible(doc: Document, el: Element): boolean {
+  if (!(el instanceof HTMLElement)) return false
+  const win = doc.defaultView
+  const style = win?.getComputedStyle(el)
+  if (!style) return false
+  if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false
+  if (el.hasAttribute("hidden") || el.getAttribute("aria-hidden") === "true") return false
+  const rect = el.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
+function clickLikeUser(doc: Document, el: HTMLElement) {
+  el.scrollIntoView({ block: "center", inline: "center" })
+  el.focus()
+  const win = doc.defaultView
+  const makeMouse = (type: string) => new MouseEvent(type, { bubbles: true, cancelable: true, view: win })
+  const makePointer = (type: string) => {
+    const PE = win?.PointerEvent
+    return PE ? new PE(type, { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, view: win }) : null
+  }
+  for (const t of ["pointerdown", "mousedown"]) {
+    const ev = makePointer(t) || makeMouse(t)
+    el.dispatchEvent(ev)
+  }
+  for (const t of ["pointerup", "mouseup", "click"]) {
+    const ev = makePointer(t) || makeMouse(t)
+    el.dispatchEvent(ev)
+  }
+  if (el instanceof HTMLButtonElement && el.type === "submit") {
+    const form = el.closest("form")
+    const requestSubmit = (form as HTMLFormElement | null)?.requestSubmit
+    if (form && typeof requestSubmit === "function") {
+      requestSubmit.call(form, el)
+      return
+    }
+  }
+  el.click()
+}
+
+function pickSubmitButton(doc: Document, scope: ParentNode): HTMLElement | null {
+  const candidates = Array.from(scope.querySelectorAll<HTMLElement>(
+    '.J_SubmitReview, .compose-btn button, button[type="submit"], .btn-submit, .submit, button[data-spm-anchor-id]'
+  ))
+  const filtered = candidates.filter(el => {
+    if (!isElementVisible(doc, el)) return false
+    if (el instanceof HTMLButtonElement && el.disabled) return false
+    const txt = (el.textContent ?? "").replace(/\s+/g, "")
+    if (!txt) return false
+    return txt.includes("提交") || txt.includes("发表") || txt.includes("确认")
+  })
+  return filtered[0] ?? null
+}
+
 export async function fillTaobaoReview(doc: Document, text: string, orderKey?: string, rating?: number, submit?: boolean): Promise<void> {
   let textarea: HTMLTextAreaElement | HTMLInputElement | null = null
   let targetContainer: Element | null = null
@@ -22,7 +75,6 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
     }
   }
 
-  // 尝试直接通过天猫特有的 data-bizoid 定位容器
   if (!textarea && orderKey) {
     const parts = orderKey.split('-')
     const tradeId = parts[0]
@@ -48,7 +100,6 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
   textarea.focus()
 
   if (rating && targetContainer) {
-    // 1. 旧版淘宝的星星选择器，通常在类似 ul.rate-star 或 .stars-wrap 下的 li / i
     const oldStarGroups = targetContainer.querySelectorAll('.rate-star, .stars-wrap, [class*="star"]')
     for (const group of Array.from(oldStarGroups)) {
       const stars = Array.from(group.querySelectorAll('li, i, span.star')) as HTMLElement[]
@@ -60,14 +111,10 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
       }
     }
 
-    // 2. 新版天猫 / 淘宝的星星选择器：.tm-rating-star-list 下的 div.J_ratingStar
     const newStarGroups = targetContainer.querySelectorAll('.tm-rating-star-list, .rate-star-list')
     for (const group of Array.from(newStarGroups)) {
-      // 获取当前星级组下的所有星星（可能是 data-star-value=1,2,3,4,5）
       const stars = Array.from(group.querySelectorAll('.J_ratingStar, [data-star-value]')) as HTMLElement[]
-      // 为了安全，过滤出真正带 data-star-value 或者是按顺序的星标
       if (stars.length >= 5) {
-        // 寻找符合 rating 数值的元素
         const targetStar = stars.find(s => s.getAttribute('data-star-value') === String(rating)) || stars[rating - 1]
         if (targetStar) {
           targetStar.click()
@@ -78,12 +125,12 @@ export async function fillTaobaoReview(doc: Document, text: string, orderKey?: s
 
   if (submit) {
     setTimeout(() => {
-      // 淘宝的发表按钮
-      const submitBtn = doc.querySelector('.J_SubmitReview, .compose-btn button, button[type="submit"], .btn-submit, .submit') as HTMLElement | null
-      if (submitBtn) {
-        submitBtn.click()
-      }
+      textarea?.dispatchEvent(new Event("blur", { bubbles: true }))
+      textarea?.blur()
+      const submitBtn =
+        (targetContainer ? pickSubmitButton(doc, targetContainer) : null) ||
+        pickSubmitButton(doc, doc)
+      if (submitBtn) clickLikeUser(doc, submitBtn)
     }, 500)
   }
 }
-
