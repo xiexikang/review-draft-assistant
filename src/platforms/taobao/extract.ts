@@ -122,7 +122,7 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     
     const reviewUrl = isTmall 
       ? `https://ratewrite.tmall.com/rate_detail.htm?tradeID=${orderKey}#miaoposition`
-      : `https://rate.taobao.com/rate.htm?trade_id=${orderKey}`
+      : `https://rate.taobao.com/remarkSeller.jhtml?tradeID=${orderKey}`
 
     items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
   }
