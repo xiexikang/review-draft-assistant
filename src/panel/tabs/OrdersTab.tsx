@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react"
 import type { PlatformFillReview } from "../../shared/messages"
 import type { OrderItem, DraftItem } from "../../shared/types"
 import { getOrdersSnapshot, getProviderConfig, getDraftsByOrderKey } from "../../shared/storage"
+import { useToast } from "../toast/ToastProvider"
 
 export function OrdersTab() {
+  const toast = useToast()
   const [orders, setOrders] = useState<OrderItem[]>([])
   const [drafts, setDrafts] = useState<Record<string, DraftItem>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -48,14 +50,17 @@ export function OrdersTab() {
       if (message.type === "GEN_DRAFTS_RESULT") {
         setProgress(null)
         setGenStatus(`已生成：${message.payload.drafts.length} 单`)
+        toast.show({ id: "gen", type: "success", text: `已生成：${message.payload.drafts.length} 单` })
         void loadData() // 重新加载草稿数据
       }
       if (message.type === "GEN_DRAFTS_PROGRESS") {
         setProgress(message.payload)
         setGenStatus("")
+        toast.show({ id: "gen", type: "loading", text: `生成中：${message.payload.done}/${message.payload.total}` })
       }
       if (message.type === "GEN_DRAFTS_ERROR") {
         setGenStatus(message.payload.errorMessage)
+        toast.show({ id: "gen", type: "error", text: message.payload.errorMessage })
       }
     }
     chrome.runtime.onMessage.addListener(onMsg)
@@ -68,15 +73,18 @@ export function OrdersTab() {
   async function generateForOrders(ordersToGen: OrderItem[]) {
     if (ordersToGen.length === 0) {
       setGenStatus("请先选择订单")
+      toast.show({ id: "gen", type: "error", text: "请先选择订单" })
       return
     }
     const providerConfig = await getProviderConfig()
     if (!providerConfig || !providerConfig.apiKey || !providerConfig.model) {
       setGenStatus("请先在设置中保存 API Key 与模型")
+      toast.show({ id: "gen", type: "error", text: "请先在设置中保存 API Key 与模型" })
       return
     }
     setGenStatus("已开始生成…")
     setProgress({ done: 0, total: ordersToGen.length })
+    toast.show({ id: "gen", type: "loading", text: "开始生成…" })
 
     const tags = tagsInput
       .split(",")
@@ -100,21 +108,28 @@ export function OrdersTab() {
   }
 
   async function copy(id: string, text: string) {
-    await navigator.clipboard.writeText(text)
-    setCopyStatus((prev) => ({ ...prev, [id]: "已复制" }))
-    setTimeout(() => {
-      setCopyStatus((prev) => ({ ...prev, [id]: "" }))
-    }, 1500)
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyStatus((prev) => ({ ...prev, [id]: "已复制" }))
+      toast.show({ id: "copy", type: "success", text: "已复制" })
+      setTimeout(() => {
+        setCopyStatus((prev) => ({ ...prev, [id]: "" }))
+      }, 1500)
+    } catch {
+      toast.show({ id: "copy", type: "error", text: "复制失败" })
+    }
   }
 
   async function fill(id: string, text: string, orderKey: string, draftRating: number, reviewUrl?: string, submit: boolean = false) {
     try {
       setFillStatus((prev) => ({ ...prev, [id]: submit ? "发表中..." : "填入中..." }))
+      toast.show({ id: "fill", type: "loading", text: submit ? "发表中…" : "填入中…" })
       const tabs = await chrome.tabs.query({ url: ["*://*.jd.com/*", "*://*.taobao.com/*", "*://*.tmall.com/*"] })
       const activeTab = tabs.find(t => t.active) || tabs[0]
       
       if (!activeTab?.id) {
         setFillStatus((prev) => ({ ...prev, [id]: "未找到评价页" }))
+        toast.show({ id: "fill", type: "error", text: "未找到评价页" })
         return
       }
       
@@ -137,15 +152,19 @@ export function OrdersTab() {
       
       if (res.ok) {
         setFillStatus((prev) => ({ ...prev, [id]: "已填入" }))
+        toast.show({ id: "fill", type: "success", text: submit ? "已提交" : "已填入" })
       } else {
         if (!isReviewPage && reviewUrl) {
           setFillStatus((prev) => ({ ...prev, [id]: "请先进入评价页" }))
+          toast.show({ id: "fill", type: "error", text: "请先进入评价页" })
         } else {
           setFillStatus((prev) => ({ ...prev, [id]: `失败: ${res.error || '未找到输入框'}` }))
+          toast.show({ id: "fill", type: "error", text: `失败: ${res.error || "未找到输入框"}` })
         }
       }
     } catch (e) {
       setFillStatus((prev) => ({ ...prev, [id]: "错误" }))
+      toast.show({ id: "fill", type: "error", text: "错误" })
     }
     
     setTimeout(() => {
