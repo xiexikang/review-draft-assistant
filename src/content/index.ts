@@ -12,7 +12,11 @@ async function syncOrders() {
     type: "PLATFORM_ORDERS_UPDATED",
     payload: { platform, context, orders },
   }
-  chrome.runtime.sendMessage(msg)
+  chrome.runtime.sendMessage(msg, () => {
+    if (chrome.runtime.lastError) {
+      console.warn("发送订单数据失败:", chrome.runtime.lastError.message)
+    }
+  })
 }
 
 chrome.runtime.onMessage.addListener((message: MessageToContent, _sender, sendResponse) => {

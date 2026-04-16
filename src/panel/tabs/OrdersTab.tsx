@@ -1,32 +1,35 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { PlatformFillReview } from "../../shared/messages"
 import type { OrderItem, DraftItem } from "../../shared/types"
 import { getOrdersSnapshot, getProviderConfig, getDraftsByOrderKey } from "../../shared/storage"
 import { useToast } from "../toast/ToastProvider"
+import { DraftSection } from "./components/DraftSection"
+
+function getPlatformName(platform: string) {
+  if (platform === "jd") return "京东"
+  if (platform === "taobao") return "淘宝"
+  return platform
+}
 
 export function OrdersTab() {
   const toast = useToast()
   const [orders, setOrders] = useState<OrderItem[]>([])
   const [drafts, setDrafts] = useState<Record<string, DraftItem>>({})
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [rating, setRating] = useState<number>(5)
   const [tagsInput, setTagsInput] = useState<string>("")
   const [style, setStyle] = useState<string>("")
   const [genStatus, setGenStatus] = useState<string>("")
-  const [progress, setProgress] = useState<{ done: number; total: number; currentOrderKey?: string } | null>(
-    null,
-  )
+  const [progress, setProgress] = useState<{ done: number; total: number; currentOrderKey?: string } | null>(null)
   const [meta, setMeta] = useState<{ platform: string; context: string }>({
     platform: "unknown",
     context: "unknown",
   })
-
   const [copyStatus, setCopyStatus] = useState<Record<string, string>>({})
   const [fillStatus, setFillStatus] = useState<Record<string, string>>({})
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const snap = await getOrdersSnapshot()
     if (snap) {
       setOrders(snap.orders)
@@ -34,11 +37,11 @@ export function OrdersTab() {
     }
     const ds = await getDraftsByOrderKey()
     setDrafts(ds)
-  }
+  }, [])
 
   useEffect(() => {
     void loadData()
-  }, [])
+  }, [loadData])
 
   useEffect(() => {
     function onMsg(message: any) {
@@ -51,7 +54,7 @@ export function OrdersTab() {
         setProgress(null)
         setGenStatus(`已生成：${message.payload.drafts.length} 单`)
         toast.show({ id: "gen", type: "success", text: `已生成：${message.payload.drafts.length} 单` })
-        void loadData() // 重新加载草稿数据
+        void loadData()
       }
       if (message.type === "GEN_DRAFTS_PROGRESS") {
         setProgress(message.payload)
@@ -65,12 +68,12 @@ export function OrdersTab() {
     }
     chrome.runtime.onMessage.addListener(onMsg)
     return () => chrome.runtime.onMessage.removeListener(onMsg)
-  }, [])
+  }, [toast, loadData])
 
   const selectedCount = useMemo(() => Object.values(selected).filter(Boolean).length, [selected])
   const selectedOrders = useMemo(() => orders.filter((o) => selected[o.orderKey]), [orders, selected])
 
-  async function generateForOrders(ordersToGen: OrderItem[]) {
+  const generateForOrders = useCallback(async (ordersToGen: OrderItem[]) => {
     if (ordersToGen.length === 0) {
       setGenStatus("请先选择订单")
       toast.show({ id: "gen", type: "error", text: "请先选择订单" })
@@ -101,13 +104,13 @@ export function OrdersTab() {
         style: style.trim() || undefined,
       },
     })
-  }
+  }, [toast, tagsInput, rating, style])
 
-  async function onGenerate() {
+  const onGenerate = useCallback(async () => {
     await generateForOrders(selectedOrders)
-  }
+  }, [generateForOrders, selectedOrders])
 
-  async function copy(id: string, text: string) {
+  const copy = useCallback(async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text)
       setCopyStatus((prev) => ({ ...prev, [id]: "已复制" }))
@@ -118,30 +121,32 @@ export function OrdersTab() {
     } catch {
       toast.show({ id: "copy", type: "error", text: "复制失败" })
     }
-  }
+  }, [toast])
 
-  async function fill(id: string, text: string, orderKey: string, draftRating: number, reviewUrl?: string, submit: boolean = false) {
+  const fill = useCallback(async (id: string, text: string, orderKey: string, draftRating: number, reviewUrl?: string, submit = false) => {
     try {
       setFillStatus((prev) => ({ ...prev, [id]: submit ? "发表中..." : "填入中..." }))
       toast.show({ id: "fill", type: "loading", text: submit ? "发表中…" : "填入中…" })
       const tabs = await chrome.tabs.query({ url: ["*://*.jd.com/*", "*://*.taobao.com/*", "*://*.tmall.com/*"] })
       const activeTab = tabs.find(t => t.active) || tabs[0]
-      
+
       if (!activeTab?.id) {
         setFillStatus((prev) => ({ ...prev, [id]: "未找到评价页" }))
         toast.show({ id: "fill", type: "error", text: "未找到评价页" })
         return
       }
-      
-      const isReviewPage = activeTab.url?.includes('orderVoucher.action') || activeTab.url?.includes('myJdcomment.action') || activeTab.url?.includes('rate.taobao.com') || activeTab.url?.includes('rate.tmall.com') || activeTab.url?.includes('ratewrite.tmall.com')
-      
+
+      const isReviewPage = activeTab.url?.includes("orderVoucher.action") || activeTab.url?.includes("myJdcomment.action") || activeTab.url?.includes("rate.taobao.com") || activeTab.url?.includes("rate.tmall.com") || activeTab.url?.includes("ratewrite.tmall.com")
+
       const msg: PlatformFillReview = {
         type: "PLATFORM_FILL_REVIEW",
         payload: { platform: meta.platform as any, orderKey, text, rating: draftRating, submit },
       }
-      
-      const res = await new Promise<{ok: boolean, error?: string}>((resolve) => {
+
+      const res = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
+        const timer = setTimeout(() => resolve({ ok: false, error: "操作超时，请重试" }), 10000)
         chrome.tabs.sendMessage(activeTab.id!, msg, (response) => {
+          clearTimeout(timer)
           if (chrome.runtime.lastError) {
             resolve({ ok: false, error: chrome.runtime.lastError.message })
           } else {
@@ -149,7 +154,7 @@ export function OrdersTab() {
           }
         })
       })
-      
+
       if (res.ok) {
         setFillStatus((prev) => ({ ...prev, [id]: "已填入" }))
         toast.show({ id: "fill", type: "success", text: submit ? "已提交" : "已填入" })
@@ -158,51 +163,56 @@ export function OrdersTab() {
           setFillStatus((prev) => ({ ...prev, [id]: "请先进入评价页" }))
           toast.show({ id: "fill", type: "error", text: "请先进入评价页" })
         } else {
-          setFillStatus((prev) => ({ ...prev, [id]: `失败: ${res.error || '未找到输入框'}` }))
+          setFillStatus((prev) => ({ ...prev, [id]: `失败: ${res.error || "未找到输入框"}` }))
           toast.show({ id: "fill", type: "error", text: `失败: ${res.error || "未找到输入框"}` })
         }
       }
-    } catch (e) {
+    } catch {
       setFillStatus((prev) => ({ ...prev, [id]: "错误" }))
       toast.show({ id: "fill", type: "error", text: "错误" })
     }
-    
+
     setTimeout(() => {
       setFillStatus((prev) => ({ ...prev, [id]: "" }))
     }, 3000)
-  }
+  }, [toast, meta.platform])
 
-  function toggleExpand(orderKey: string) {
+  const toggleExpand = useCallback((orderKey: string) => {
     setExpanded((prev) => ({ ...prev, [orderKey]: !prev[orderKey] }))
-  }
+  }, [])
 
-  function getPlatformName(platform: string) {
-    if (platform === "jd") return "京东"
-    if (platform === "taobao") return "淘宝"
-    return platform
-  }
-
-  async function refreshCurrentTab() {
+  const refreshCurrentTab = useCallback(async () => {
     try {
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
       if (tabs[0]?.id) {
         chrome.tabs.sendMessage(tabs[0].id, { type: "REQUEST_SYNC_ORDERS" }, () => {
           if (chrome.runtime.lastError) {
-             console.warn("刷新请求未送达，可能不在支持的页面:", chrome.runtime.lastError.message)
+            console.warn("刷新请求未送达，可能不在支持的页面:", chrome.runtime.lastError.message)
           }
         })
       }
     } catch (e) {
       console.error(e)
     }
-  }
+  }, [])
+
+  const orderGroups = useMemo(() => {
+    return Object.entries(
+      orders.reduce((acc, o) => {
+        const key = o.orderId || o.orderKey
+        if (!acc[key]) acc[key] = []
+        acc[key].push(o)
+        return acc
+      }, {} as Record<string, OrderItem[]>),
+    )
+  }, [orders])
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-sm font-semibold">订单</div>
-        <button 
-          onClick={refreshCurrentTab} 
+        <button
+          onClick={refreshCurrentTab}
           className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors"
         >
           刷新
@@ -220,9 +230,7 @@ export function OrdersTab() {
             onChange={(e) => setRating(Number(e.target.value))}
           >
             {[5, 4, 3, 2, 1].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
         </label>
@@ -262,22 +270,12 @@ export function OrdersTab() {
         </div>
       ) : null}
       {genStatus ? <div className="text-xs text-slate-700">{genStatus}</div> : null}
-      
+
       <div className="space-y-4 mt-4">
-        {Object.entries(
-          // 按 orderId 分组
-          orders.reduce((acc, o) => {
-            const key = o.orderId || o.orderKey
-            if (!acc[key]) acc[key] = []
-            acc[key].push(o)
-            return acc
-          }, {} as Record<string, OrderItem[]>)
-        ).map(([groupId, groupOrders]) => {
+        {orderGroups.map(([groupId, groupOrders]) => {
           const firstOrder = groupOrders[0]
-          
           return (
             <div key={groupId} className="rounded border flex flex-col overflow-hidden bg-white">
-              {/* 订单 Header (灰色背景) */}
               <div className="bg-slate-50 px-3 py-2 flex items-center justify-between border-b text-xs text-slate-600">
                 <div className="flex items-center gap-4">
                   {firstOrder.date && <span className="font-bold text-slate-800">{firstOrder.date}</span>}
@@ -286,12 +284,10 @@ export function OrdersTab() {
                 {firstOrder.consignee && <span>{firstOrder.consignee}</span>}
               </div>
 
-              {/* 订单下的所有商品 */}
               <div className="flex flex-col divide-y">
                 {groupOrders.map((o) => {
                   const draft = drafts[o.orderKey]
                   const isExpanded = expanded[o.orderKey]
-                  
                   return (
                     <div key={o.orderKey} className="flex flex-col">
                       <label className="flex items-start gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors">
@@ -316,9 +312,9 @@ export function OrdersTab() {
                               {o.count ? <div className="text-[11px] text-slate-500">{o.count}</div> : null}
                             </div>
                             <div className="flex items-center gap-2">
-                              <button 
-                                type="button" 
-                                onClick={(e) => { 
+                              <button
+                                type="button"
+                                onClick={(e) => {
                                   e.preventDefault()
                                   generateForOrders([o])
                                   setExpanded(prev => ({ ...prev, [o.orderKey]: true }))
@@ -328,9 +324,9 @@ export function OrdersTab() {
                                 {draft ? "重新生成" : "一键生成"}
                               </button>
                               {draft ? (
-                                <button 
-                                  type="button" 
-                                  onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey); }}
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); toggleExpand(o.orderKey) }}
                                   className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition-colors whitespace-nowrap"
                                 >
                                   {isExpanded ? "收起草稿" : "查看草稿"}
@@ -340,7 +336,7 @@ export function OrdersTab() {
                           </div>
                         </div>
                       </label>
-                      
+
                       {draft && isExpanded && (
                         <div className="border-t p-3 bg-slate-50 space-y-3 shadow-inner">
                           <div className="flex items-center justify-between">
@@ -351,66 +347,30 @@ export function OrdersTab() {
                               </a>
                             )}
                           </div>
-                          
-                          {/* 短草稿 */}
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs font-semibold">短</div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-short`] || fillStatus[`${o.orderKey}-short`]}</span>
-                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void copy(`${o.orderKey}-short`, draft.draft_short)}>
-                                  复制
-                                </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl)}>
-                                  填入
-                                </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-slate-900 text-white hover:bg-slate-800 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl, true)}>
-                                  填入并发表
-                                </button>
-                              </div>
-                            </div>
-                            <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-white p-2 rounded border border-slate-200">{draft.draft_short}</div>
-                          </div>
-
-                          {/* 中草稿 */}
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs font-semibold">中</div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-mid`] || fillStatus[`${o.orderKey}-mid`]}</span>
-                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void copy(`${o.orderKey}-mid`, draft.draft_mid)}>
-                                  复制
-                                </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl)}>
-                                  填入
-                                </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-slate-900 text-white hover:bg-slate-800 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl, true)}>
-                                  填入并发表
-                                </button>
-                              </div>
-                            </div>
-                            <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-white p-2 rounded border border-slate-200">{draft.draft_mid}</div>
-                          </div>
-
-                          {/* 长草稿 */}
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs font-semibold">长</div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-green-600">{copyStatus[`${o.orderKey}-long`] || fillStatus[`${o.orderKey}-long`]}</span>
-                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void copy(`${o.orderKey}-long`, draft.draft_long)}>
-                                  复制
-                                </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-white hover:bg-slate-50 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl)}>
-                                  填入
-                                </button>
-                                <button className="rounded border px-2 py-1 text-xs bg-slate-900 text-white hover:bg-slate-800 transition-colors" type="button" onClick={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl, true)}>
-                                  填入并发表
-                                </button>
-                              </div>
-                            </div>
-                            <div className="whitespace-pre-wrap break-words text-xs text-slate-800 bg-white p-2 rounded border border-slate-200">{draft.draft_long}</div>
-                          </div>
+                          <DraftSection
+                            label="短"
+                            text={draft.draft_short}
+                            statusText={copyStatus[`${o.orderKey}-short`] || fillStatus[`${o.orderKey}-short`] || ""}
+                            onCopy={() => void copy(`${o.orderKey}-short`, draft.draft_short)}
+                            onFill={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl)}
+                            onFillAndSubmit={() => void fill(`${o.orderKey}-short`, draft.draft_short, o.orderKey, draft.rating, o.reviewUrl, true)}
+                          />
+                          <DraftSection
+                            label="中"
+                            text={draft.draft_mid}
+                            statusText={copyStatus[`${o.orderKey}-mid`] || fillStatus[`${o.orderKey}-mid`] || ""}
+                            onCopy={() => void copy(`${o.orderKey}-mid`, draft.draft_mid)}
+                            onFill={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl)}
+                            onFillAndSubmit={() => void fill(`${o.orderKey}-mid`, draft.draft_mid, o.orderKey, draft.rating, o.reviewUrl, true)}
+                          />
+                          <DraftSection
+                            label="长"
+                            text={draft.draft_long}
+                            statusText={copyStatus[`${o.orderKey}-long`] || fillStatus[`${o.orderKey}-long`] || ""}
+                            onCopy={() => void copy(`${o.orderKey}-long`, draft.draft_long)}
+                            onFill={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl)}
+                            onFillAndSubmit={() => void fill(`${o.orderKey}-long`, draft.draft_long, o.orderKey, draft.rating, o.reviewUrl, true)}
+                          />
                         </div>
                       )}
                     </div>

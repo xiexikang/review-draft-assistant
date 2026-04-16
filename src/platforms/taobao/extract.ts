@@ -1,8 +1,6 @@
 import type { OrderItem } from "../../shared/types"
 
-function text(el: Element | null | undefined): string {
-  return (el?.textContent ?? "").replace(/\s+/g, " ").trim()
-}
+import { text } from "../shared/utils"
 
 function pickTitle(container: Element): string {
   const candidates = [
@@ -64,7 +62,12 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     if (!title || title.length < 4 || title.includes("待评价")) continue
     
     const itemUrl = titleEl && (titleEl as HTMLAnchorElement).href ? new URL((titleEl as HTMLAnchorElement).href, location.href).toString() : undefined
-    const reviewUrl = a.href ? new URL(a.href, location.href).toString() : undefined
+    let reviewUrl = a.href ? new URL(a.href, location.href).toString() : undefined
+    // 修正：淘宝旧版 rate.htm 链接应改为 remarkSeller.jhtml
+    if (reviewUrl && reviewUrl.includes("rate.taobao.com/rate.htm")) {
+      const match = reviewUrl.match(/trade_id=(\d+)/)
+      if (match) reviewUrl = `https://rate.taobao.com/remarkSeller.jhtml?tradeID=${match[1]}`
+    }
     const orderKey = stableOrderKey(a.href, container, title)
     
     const skuEl = container.querySelector('.sku, .props, .spec, .spec-info')
@@ -124,7 +127,7 @@ export async function extractTaobaoOrders(doc: Document): Promise<OrderItem[]> {
     
     const reviewUrl = isTmall 
       ? `https://ratewrite.tmall.com/rate_detail.htm?tradeID=${orderKey}#miaoposition`
-      : `https://rate.taobao.com/rate.htm?trade_id=${orderKey}`
+      : `https://rate.taobao.com/remarkSeller.jhtml?tradeID=${orderKey}`
 
     items.push({ platform: "taobao", orderKey, title, itemUrl, reviewUrl, imageUrl, skuText })
   }
