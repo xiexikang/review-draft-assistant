@@ -3,83 +3,43 @@ import type { ProviderConfig, ProviderId } from "../../shared/types"
 import type { ProviderTestResult } from "../../shared/messages"
 import { sendToBackground } from "../../shared/messages"
 import { getProviderConfig, setProviderConfig } from "../../shared/storage"
+import { getAllProviders } from "../../background/providers/registry"
 
-const providerModels: Record<ProviderId, string[]> = {
-  openai: [
-    "gpt-5.4-pro",
-    "gpt-5.4",
-    "gpt-5.4-mini",
-    "gpt-5.4-nano",
-    "gpt-5.3-chat",
-    "gpt-5.3-codex",
-    "gpt-5.2-pro",
-    "gpt-5.2",
-    "o3-deep-research",
-    "o4-mini-deep-research"
-  ],
-  claude: [
-    "claude-sonnet-4.6",
-    "claude-opus-4.6",
-    "claude-sonnet-4.5",
-    "claude-opus-4.5",
-    "claude-haiku-4.5",
-    "claude-sonnet-4",
-    "claude-opus-4",
-    "claude-3-haiku"
-  ],
-  zhipu: [
-    "glm-5.1",
-    "glm-5",
-    "glm-5-turbo",
-    "glm-4.7",
-    "glm-4.7-flash",
-    "glm-4.6",
-    "glm-4-32b",
-    "glm-4-flash",
-    "glm-4",
-  ],
-  deepseek: ["deepseek-chat", "deepseek-reasoner"],
-  qwen: [
-    "qwen3.6-plus",
-    "qwen3.6-plus-preview",
-    "qwen3.5-9b",
-    "qwen3.5-35b-a3b",
-    "qwen3.5-27b",
-    "qwen3.5-122b-a10b",
-    "qwen3.5-flash-02-23",
-    "qwen3.5-plus-02-15",
-    "qwen3.5-397b-a17b",
-    "qwen3-max-thinking",
-    "qwen3-coder-next",
-    "qwen3-max"
-  ],
-  minimax: [
-    "minimax-m2.7",
-    "minimax-m2.5",
-    "minimax-m2-her",
-    "minimax-m2.1",
-    "minimax-m2",
-    "minimax-m1",
-    "minimax-01"
-  ],
-  moonshot: [
-    "kimi-k2.5",
-    "kimi-k2-thinking",
-    "kimi-k2-0905",
-    "kimi-k2",
-    "kimi-dev-72b",
-    "moonlight-16b-a3b-instruct"
-  ],
-  openrouter: [
-    "openai/gpt-5.4-mini",
-    "openai/gpt-5.4-nano",
-    "anthropic/claude-sonnet-4.6",
-    "z-ai/glm-4.7",
-    "qwen/qwen3.6-plus",
-    "deepseek/deepseek-chat",
-    "moonshotai/kimi-k2",
-    "minimax/minimax-m2.5",
-  ],
+const allProviders = getAllProviders()
+
+const providerIds: ProviderId[] = [
+  "openai",
+  "claude",
+  "zhipu",
+  "deepseek",
+  "qwen",
+  "minimax",
+  "moonshot",
+  "openrouter",
+]
+
+const providerLabels: Record<ProviderId, string> = {
+  openai: "OpenAI",
+  claude: "Claude",
+  zhipu: "智谱",
+  deepseek: "DeepSeek",
+  qwen: "Qwen (通义千问)",
+  minimax: "MiniMax",
+  moonshot: "Kimi (Moonshot)",
+  openrouter: "OpenRouter",
+}
+
+const providerModels: Record<ProviderId, string[]> = Object.fromEntries(
+  providerIds.map((id) => [id, allProviders[id].recommendedModels]),
+) as Record<ProviderId, string[]>
+
+const providerBaseUrls: Record<ProviderId, string> = Object.fromEntries(
+  providerIds.map((id) => [id, allProviders[id].defaultBaseUrl]),
+) as Record<ProviderId, string>
+
+const providerBaseUrlHints: Partial<Record<ProviderId, string>> = {
+  zhipu: "中国区：https://open.bigmodel.cn/api/paas/v4  国际区：https://api.z.ai/api/paas/v4  OpenRouter：https://openrouter.ai/api/v1",
+  openrouter: "https://openrouter.ai/api/v1",
 }
 
 export function SettingsTab() {
@@ -94,15 +54,7 @@ export function SettingsTab() {
 
   const models = useMemo(() => providerModels[provider], [provider])
   const baseUrlPlaceholder = useMemo(() => {
-    if (provider === "zhipu")
-      return "中国区：https://open.bigmodel.cn/api/paas/v4  国际区：https://api.z.ai/api/paas/v4  OpenRouter：https://openrouter.ai/api/v1"
-    if (provider === "openai") return "https://api.openai.com"
-    if (provider === "claude") return "https://api.anthropic.com"
-    if (provider === "qwen") return "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    if (provider === "minimax") return "https://api.minimax.chat/v1"
-    if (provider === "moonshot") return "https://api.moonshot.cn/v1"
-    if (provider === "openrouter") return "https://openrouter.ai/api/v1"
-    return "https://api.deepseek.com"
+    return providerBaseUrlHints[provider] ?? providerBaseUrls[provider] ?? ""
   }, [provider])
 
   useEffect(() => {
@@ -168,14 +120,11 @@ export function SettingsTab() {
             setModel(providerModels[newProvider][0]!)
           }}
         >
-          <option value="openai">OpenAI</option>
-          <option value="claude">Claude</option>
-          <option value="zhipu">智谱</option>
-          <option value="deepseek">DeepSeek</option>
-          <option value="qwen">Qwen (通义千问)</option>
-          <option value="minimax">MiniMax</option>
-          <option value="moonshot">Kimi (Moonshot)</option>
-          <option value="openrouter">OpenRouter</option>
+          {providerIds.map((id) => (
+            <option key={id} value={id}>
+              {providerLabels[id]}
+            </option>
+          ))}
         </select>
       </label>
 

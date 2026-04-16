@@ -1,8 +1,6 @@
 import type { OrderItem } from "../../shared/types"
 
-function text(el: Element | null | undefined): string {
-  return (el?.textContent ?? "").replace(/\s+/g, " ").trim()
-}
+import { text } from "../shared/utils"
 
 function pickTitle(container: Element): string {
   const candidates = [

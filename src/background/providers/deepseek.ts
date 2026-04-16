@@ -1,30 +1,13 @@
 import type { ProviderConfig } from "../../shared/types"
 import type { ProviderAdapter } from "./types"
+import { buildOpenAICompatRequest } from "./base"
 
 export const deepseekProvider: ProviderAdapter = {
   defaultBaseUrl: "https://api.deepseek.com",
   recommendedModels: ["deepseek-chat", "deepseek-reasoner"],
   requiredExtraFields: [],
-  buildRequest: (config: ProviderConfig, prompt: string) => {
-    const baseUrl = config.baseUrl?.trim() || "https://api.deepseek.com"
-    return {
-      url: `${baseUrl}/v1/chat/completions`,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: {
-        model: config.model,
-        temperature: config.temperature ?? 0.7,
-        max_tokens: config.maxTokens ?? 800,
-        messages: [
-          { role: "system", content: "You are a helpful assistant that outputs strictly valid JSON." },
-          { role: "user", content: prompt },
-        ],
-      },
-    }
-  },
+  buildRequest: (config: ProviderConfig, prompt: string) =>
+    buildOpenAICompatRequest({ defaultBaseUrl: "https://api.deepseek.com" }, config, prompt),
   parseText: (respJson: any) => respJson?.choices?.[0]?.message?.content ?? "",
-  testRequest: (config: ProviderConfig) => deepseekProvider.buildRequest(config, "[{\"ok\":true}]"),
+  testRequest: (config: ProviderConfig) => deepseekProvider.buildRequest(config, '[{"ok":true}]'),
 }
-

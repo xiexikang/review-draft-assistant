@@ -1,8 +1,6 @@
 import type { OrderItem } from "../../shared/types"
 
-function text(el: Element | null | undefined): string {
-  return (el?.textContent ?? "").replace(/\s+/g, " ").trim()
-}
+import { text } from "../shared/utils"
 
 export async function extractJdOrders(doc: Document): Promise<OrderItem[]> {
   const items: OrderItem[] = []

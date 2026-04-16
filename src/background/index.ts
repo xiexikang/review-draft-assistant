@@ -7,26 +7,28 @@ import type {
   ProviderTestResult,
 } from "../shared/messages"
 import { getDraftsByOrderKey, setDraftsByOrderKey, setOrdersSnapshot } from "../shared/storage"
-import type { DraftItem, ProviderId } from "../shared/types"
+import type { DraftItem } from "../shared/types"
 import { generateDraftForOrder } from "./queue"
-import { claudeProvider } from "./providers/claude"
-import { deepseekProvider } from "./providers/deepseek"
-import { openaiProvider } from "./providers/openai"
-import { zhipuProvider } from "./providers/zhipu"
-import { qwenProvider } from "./providers/qwen"
-import { minimaxProvider } from "./providers/minimax"
-import { moonshotProvider } from "./providers/moonshot"
-import { openrouterProvider } from "./providers/openrouter"
+import { getProvider } from "./providers/registry"
 
-function getProvider(provider: ProviderId) {
-  if (provider === "openai") return openaiProvider
-  if (provider === "claude") return claudeProvider
-  if (provider === "zhipu") return zhipuProvider
-  if (provider === "qwen") return qwenProvider
-  if (provider === "minimax") return minimaxProvider
-  if (provider === "moonshot") return moonshotProvider
-  if (provider === "openrouter") return openrouterProvider
-  return deepseekProvider
+/** Simple concurrency limiter – runs at most `concurrency` promises at a time */
+async function promisePool<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = []
+  let index = 0
+
+  async function worker() {
+    while (index < items.length) {
+      const i = index++
+      results[i] = await fn(items[i])
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()))
+  return results
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -74,11 +76,11 @@ chrome.runtime.onMessage.addListener((message: MessageToBackground | PlatformOrd
     if (message.type === "GEN_DRAFTS_START") {
       const { providerConfig, orders, rating, tags, style } = message.payload
       const total = orders.length
-      let done = 0
       const out: DraftItem[] = []
       const map = await getDraftsByOrderKey()
+      let done = 0
 
-      for (const order of orders) {
+      await promisePool(orders, 3, async (order) => {
         try {
           const draft = await generateDraftForOrder({ providerConfig, order, rating, tags, style })
           out.push(draft)
@@ -100,7 +102,7 @@ chrome.runtime.onMessage.addListener((message: MessageToBackground | PlatformOrd
           payload: { done, total, currentOrderKey: order.orderKey },
         }
         chrome.runtime.sendMessage(progress)
-      }
+      })
 
       await setDraftsByOrderKey(map)
       const result: GenDraftsResult = { type: "GEN_DRAFTS_RESULT", payload: { drafts: out } }

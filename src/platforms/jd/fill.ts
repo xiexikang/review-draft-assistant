@@ -1,9 +1,4 @@
-function setNativeValue(el: HTMLTextAreaElement | HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), "value")?.set
-  setter?.call(el, value)
-  el.dispatchEvent(new Event("input", { bubbles: true }))
-  el.dispatchEvent(new Event("change", { bubbles: true }))
-}
+import { setNativeValue } from "../shared/dom"
 
 export async function fillJdReview(doc: Document, text: string, orderKey?: string, rating?: number, submit?: boolean): Promise<void> {
   let textarea: HTMLTextAreaElement | HTMLInputElement | null = null
@@ -59,15 +54,22 @@ export async function fillJdReview(doc: Document, text: string, orderKey?: strin
     }
   }
 
-  // 自动点击“发表”按钮
+  // 自动点击"发表"按钮
   if (submit) {
     setTimeout(() => {
-      // 在京东评价页里，"发表"按钮一般是 .btn-submit 或者包含类似文案的 a 标签
       const submitBtn = doc.querySelector('.btn-submit, a.btn-submit, button.btn-submit, [clstag*="fabupingjia"]') as HTMLElement | null
-      if (submitBtn) {
+      if (!submitBtn) return
+
+      // 京东"发表"按钮是 <a href="">，临时移除 href 使其不触发导航，但 JS 事件监听器仍正常执行
+      if (submitBtn instanceof HTMLAnchorElement && submitBtn.hasAttribute("href")) {
+        const origHref = submitBtn.getAttribute("href")!
+        submitBtn.removeAttribute("href")
+        submitBtn.click()
+        submitBtn.setAttribute("href", origHref)
+      } else {
         submitBtn.click()
       }
-    }, 500) // 给予一点时间让 React/Vue 内部状态同步
+    }, 800)
   }
 }
 
