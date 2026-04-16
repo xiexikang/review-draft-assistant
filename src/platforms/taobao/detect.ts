@@ -4,7 +4,13 @@ export function detectTaobaoContext(tabUrl: string, doc: Document): Context {
   const url = tabUrl.toLowerCase()
   
   // 具体的评价填写页面
-  if (url.includes("rate.taobao.com/appendrate.htm") || url.includes("rate.taobao.com/rate.htm") || url.includes("rate.tmall.com/rate.htm")) {
+  if (
+    url.includes("rate.taobao.com/appendrate.htm") ||
+    url.includes("rate.taobao.com/rate.htm") ||
+    url.includes("rate.taobao.com/remarkseller") ||
+    url.includes("rate.tmall.com/rate.htm") ||
+    url.includes("ratewrite.tmall.com/rate_detail.htm")
+  ) {
     return "review_page"
   }
   
@@ -14,12 +20,11 @@ export function detectTaobaoContext(tabUrl: string, doc: Document): Context {
   }
 
   // 兜底检测
-  const hasReviewForm = Boolean(doc.querySelector('textarea, .rate-item, .comment-box'))
+  const hasReviewForm = Boolean(doc.querySelector('textarea, .rate-item, .rate-box, .comment-box, form#rateListForm'))
   if (hasReviewForm) return "review_page"
 
-  const hasLikelyList = Boolean(doc.querySelector('a[href*="rate.htm"], a[href*="appendRate.htm"]'))
+  const hasLikelyList = Boolean(doc.querySelector('a[href*="rate.htm"], a[href*="appendRate.htm"], a[href*="remarkSeller"]'))
   if (hasLikelyList) return "order_list_pending_review"
 
   return "unknown"
 }
-
